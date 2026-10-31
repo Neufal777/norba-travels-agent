@@ -1,7 +1,8 @@
 import "server-only";
 
-import type { Offer, OffersBlock, SearchRequest } from "@/lib/types";
+import type { Offer, OffersBlock, Order, SearchRequest } from "@/lib/types";
 import type { ChatTurn } from "../llm/types";
+import type { StoredRebook } from "./servicing-tools";
 import { newTrip, type TripState } from "./trip";
 
 /** A search the agent ran, kept so follow-ups ("only non-stop", "price o3") never search again. */
@@ -26,6 +27,12 @@ export type Session = {
   trip: TripState;
   /** IATA code → the name shown beside it ("Madrid", "London Heathrow"), for every code met in this conversation. */
   places: Map<string, string>;
+  /** Every order booked or changed in this conversation, the airline's latest answer for each. */
+  orders: Order[];
+  /** Rebooking alternatives shown, by block id. */
+  rebooks: Map<string, StoredRebook>;
+  /** The booked flight a board photo or an airline notice says is disrupted. */
+  disruption?: { orderId: string; sliceIndex: number };
   touched: number;
   busy: boolean;
 };
@@ -33,8 +40,10 @@ export type Session = {
 const TTL_MS = 3 * 60 * 60_000;
 const MAX_SESSIONS = 500;
 
-// One process, in memory: enough for a demo; a deployment with several instances would move this to Redis.
-const sessions = new Map<string, Session>();
+// One process, in memory: enough for a demo; a deployment with several instances would move this to Redis. Kept on
+// globalThis because Next.js may load this module once for API routes and again for pages.
+const store = globalThis as unknown as { __naSessions?: Map<string, Session> };
+const sessions = (store.__naSessions ??= new Map<string, Session>());
 
 function sweep() {
   const now = Date.now();
@@ -49,9 +58,14 @@ export function session(id?: string): Session {
     found.touched = Date.now();
     return found;
   }
-  const s: Session = { id: id && /^[\w-]{8,64}$/.test(id) ? id : crypto.randomUUID(), turns: [], searches: [], offers: new Map(), nextRef: 1, draft: { adults: 1 }, trip: newTrip(), places: new Map(), touched: Date.now(), busy: false };
+  const s: Session = { id: id && /^[\w-]{8,64}$/.test(id) ? id : crypto.randomUUID(), turns: [], searches: [], offers: new Map(), nextRef: 1, draft: { adults: 1 }, trip: newTrip(), places: new Map(), orders: [], rebooks: new Map(), touched: Date.now(), busy: false };
   sessions.set(s.id, s);
   return s;
+}
+
+/** A conversation that already exists, without creating one: for pages that only read it. */
+export function peek(id: string | undefined) {
+  return id ? sessions.get(id) : undefined;
 }
 
 /** Gives every offer of a search a short ref the model and the traveller can say. */

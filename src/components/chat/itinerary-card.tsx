@@ -65,13 +65,14 @@ function SliceRow({ s, label }: { s: Slice; label?: string }) {
       <div className="flex min-w-14 items-center gap-1.5" aria-label={`${duration(s.duration_minutes)}, ${s.stops ? `${s.stops} stop via ${via.join(", ")}` : "direct"}`}>
         <span aria-hidden="true" className="size-[5px] shrink-0 border border-hr-ink-3" />
         <span aria-hidden="true" className="na-dash h-px min-w-2 flex-1" />
-        <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap font-mono text-[10px] leading-none tabular-nums text-hr-ink-2">
+        {/* The stop's name gives way first: it ends in an ellipsis rather than run into the arrival. */}
+        <span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap font-mono text-[10px] leading-none tabular-nums text-hr-ink-2">
           {duration(s.duration_minutes)}
           {s.stops ? (
             via.map((v) => (
-              <span key={v} className="inline-flex items-center gap-1">
-                <span aria-hidden="true" className="size-[5px] rotate-45 bg-hr-ink-strong" />
-                <Place code={v} className="max-sm:hidden" nameClassName="text-[10.5px] max-lg:hidden" />
+              <span key={v} className="inline-flex min-w-0 items-center gap-1">
+                <span aria-hidden="true" className="size-[5px] shrink-0 rotate-45 bg-hr-ink-strong" />
+                <Place code={v} className="min-w-0 truncate max-sm:hidden" nameClassName="text-[10.5px] max-lg:hidden" />
               </span>
             ))
           ) : (

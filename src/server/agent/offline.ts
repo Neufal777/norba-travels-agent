@@ -240,6 +240,8 @@ const L = {
     pay: "Nada se cobra hasta que pulses Pagar.",
     booked: (pnr: string) => `¡Reservado! Localizador **${pnr}**.`,
     bookedSandbox: "Reserva de pruebas: no se ha cobrado nada.",
+    switched: "Cambiado. Tu reserva ya tiene el vuelo nuevo.",
+    needsVision: "Para leer archivos necesito Muse Spark: falta MODEL_API_KEY.",
     bookFailed: (why: string) => `La reserva no se ha completado: ${why}`,
     unknownOutcome: "La aerolínea no ha respondido y la tarjeta podría haberse cargado. **No vuelvas a pagar**: contacta con soporte.",
     skip: /\b(sin asientos|no quiero asientos|sin extras|no quiero extras|nada|ninguno|salta|saltar|omitir|no gracias)\b/,
@@ -272,6 +274,8 @@ const L = {
     pay: "Nothing is charged until you press Pay.",
     booked: (pnr: string) => `Booked! Reference **${pnr}**.`,
     bookedSandbox: "Sandbox booking: nothing was charged.",
+    switched: "Done. Your booking has the new flight.",
+    needsVision: "Reading files needs Muse Spark: MODEL_API_KEY is not set.",
     bookFailed: (why: string) => `The booking did not go through: ${why}`,
     unknownOutcome: "The airline did not answer and the card may have been charged. **Do not pay again**: contact support.",
     skip: /\b(no seats|skip|no extras|none|no thanks|nothing)\b/,
@@ -381,6 +385,12 @@ export async function runOffline(turn: Turn) {
   const trip = session.trip;
 
   // A form answered in the chat moves the booking on.
+  if (turn.form?.kind === "change") {
+    const b = turn.booking!;
+    return say(ctx, b.content.startsWith("ERROR") ? `${l.failed}${clean(b.content)}` : l.switched);
+  }
+  // Files are read by Muse Spark; the rule-based planner can only say so.
+  if (turn.attachments?.length && !text.replace(/^\(attached.*\)$/i, "").trim()) return say(ctx, l.needsVision);
   if (turn.form) {
     if (turn.form.kind !== "payment") return advance(ctx, lang);
     const b = turn.booking!;

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
-import { HackathonHosts, NorbaLogo } from "./brand";
+import { NorbaLogo } from "./brand";
 import { Sq } from "./status";
 import { useStatus } from "./use-status";
 
@@ -24,7 +24,7 @@ export function AppFooter() {
   const status = useStatus();
   return (
     <footer className="shrink-0 border-t border-hr-line bg-hr-surface-2">
-      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-2 px-5 py-2.5 md:px-10">
+      <div className="mx-auto flex max-w-[1120px] flex-wrap items-center gap-x-6 gap-y-2 px-5 py-2.5 md:px-10">
         <a
           href="https://norba.io"
           target="_blank"
@@ -43,12 +43,6 @@ export function AppFooter() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-x-4">
-          <span className="hidden items-center gap-2 text-[11px] text-hr-ink-3 lg:inline-flex">
-            <HackathonHosts size={16} />
-            <a href="https://cerebralvalley.ai" target="_blank" rel="noreferrer" className="cursor-pointer no-underline transition-colors hover:text-hr-ink-strong">
-              Meta Global AI Developer Hackathon
-            </a>
-          </span>
           {status && (
             <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-4">
               <Sq className={status.norba.environment === "mock" ? "bg-hr-concrete" : "bg-hr-success"} />

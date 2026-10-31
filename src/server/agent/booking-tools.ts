@@ -5,6 +5,7 @@ import { money } from "@/lib/format";
 import type { Segment } from "@/lib/types";
 import { norbaEnvironment } from "../config";
 import { norba, NorbaError } from "../norba";
+import { keepOrder } from "./servicing-tools";
 import { step } from "./trip";
 import { blockId, failure, str, type Tool, type ToolContext } from "./tools";
 
@@ -237,6 +238,7 @@ export const bookTrip: Tool = {
       );
       t.order = order;
       t.view.pnr = order.pnr;
+      keepOrder(ctx.session, order);
       ctx.emit({ type: "block", block: { kind: "booking", id: blockId(), order, outcomeUnknown } });
       step(ctx, "booking", "done", `${order.pnr ? `Reference ${order.pnr}` : order.order_id} · ${order.status}`);
       const issued = (order.tickets ?? []).filter((x) => x.ticket_number && (x.type ?? "ticket") === "ticket");

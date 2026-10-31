@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Airport, Offer, OfferQuote, Order, PricedOffer, SearchRequest, SeatMap, Service } from "@/lib/types";
 import { config } from "../config";
-import { NorbaError, type CalendarQuery, type NorbaPort, type OrderRequest, type SearchResult } from "./port";
+import { NorbaError, type CalendarQuery, type NorbaPort, type OrderRequest, type ReshopQuery, type SearchResult } from "./port";
 
 const SEARCH_TIMEOUT_MS = 90_000;
 /** A booking waits for the airline to create the order, take the payment and issue the tickets. */
@@ -167,5 +167,35 @@ export const liveNorba: NorbaPort = {
     if (!res.ok) throw await refusal(res);
     const order = (await res.json()) as Order;
     return { order, outcomeUnknown: res.headers.get("X-Norba-Payment-Outcome") === "unknown" };
+  },
+
+  async getOrder(orderId, airline) {
+    return call<Order>(`/v1/orders/${encodeURIComponent(orderId)}?airline=${airline}`);
+  },
+
+  async reshop(order, q: ReshopQuery) {
+    const slice = order.slices?.[q.sliceIndex];
+    const body: Record<string, unknown> = { segment_ids: q.segmentIds ?? slice?.segments.map((g) => g.segment_id).filter(Boolean) };
+    // Norba takes RFC 3339 timestamps here, not plain dates.
+    const day = q.date ?? slice?.departure_utc.slice(0, 10);
+    if (day) body[q.sliceIndex === 0 ? "new_departure_date" : "new_return_date"] = `${day}T00:00:00Z`;
+    const r = await call<{ offers: Offer[] | null }>(`/v1/orders/${encodeURIComponent(order.order_id)}/reshop?airline=${order.airline}`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      timeout: SEARCH_TIMEOUT_MS,
+    });
+    return r.offers ?? [];
+  },
+
+  async changeOrder(order, offerId, idempotencyKey, payment) {
+    const res = await fetch(`${config.norba.baseUrl}/v1/orders/${encodeURIComponent(order.order_id)}/change/confirm?airline=${order.airline}`, {
+      method: "POST",
+      headers: { "X-API-Key": config.norba.apiKey, "Content-Type": "application/json", Accept: "application/json", "Idempotency-Key": idempotencyKey },
+      body: JSON.stringify({ offer_id: offerId, ...(payment ? { payment: { method: "CARD", currency: payment.currency, amount: payment.amount, card: payment.card } } : {}) }),
+      signal: AbortSignal.timeout(ORDER_TIMEOUT_MS),
+      cache: "no-store",
+    });
+    if (!res.ok) throw await refusal(res);
+    return { order: (await res.json()) as Order, outcomeUnknown: res.headers.get("X-Norba-Payment-Outcome") === "unknown" };
   },
 };

@@ -32,6 +32,9 @@ export type OrderRequest = {
 /** An order the airline made, and whether the card may have been charged without an answer (do not pay again). */
 export type OrderResult = { order: Order; outcomeUnknown: boolean };
 
+/** Alternatives for a booked flight: the slice to replace and, for a move to another day, the new date. */
+export type ReshopQuery = { sliceIndex: number; segmentIds?: string[]; date?: string };
+
 /** What the agent needs from Norba. The live client and the mock both answer it. */
 export interface NorbaPort {
   /** Calls `onBatch` as each airline answers, then resolves with every offer, cheapest first. */
@@ -48,6 +51,11 @@ export interface NorbaPort {
   quote(offer: PricedOffer, seats: ChosenSeat[], extras: ChosenExtra[]): Promise<OfferQuote>;
   /** Books and pays. `idempotencyKey` is the same on every retry of one booking. */
   createOrder(req: OrderRequest, idempotencyKey: string): Promise<OrderResult>;
+  getOrder(orderId: string, airline: string): Promise<Order>;
+  /** Alternative flights for an order (OrderReShop). Each offer's total_amount is the difference owed (+) or back (−). */
+  reshop(order: Order, q: ReshopQuery): Promise<Offer[]>;
+  /** Accepts a reshop offer and reissues the order. A positive difference needs `payment`. */
+  changeOrder(order: Order, offerId: string, idempotencyKey: string, payment?: OrderRequest["payment"]): Promise<OrderResult>;
 }
 
 /** A refusal from the Norba API, with the stable `code` to branch on when it sent one. */

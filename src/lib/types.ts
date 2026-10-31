@@ -258,14 +258,82 @@ export type PaymentBlock = { kind: "payment"; id: string; amount: number; curren
 
 export type BookingBlock = { kind: "booking"; id: string; order: Order; outcomeUnknown?: boolean };
 
-export type Block = OffersBlock | CalendarBlock | PricedBlock | RepliesBlock | SeatsBlock | ExtrasBlock | TravellersBlock | ReviewBlock | PaymentBlock | BookingBlock;
+/** A file the traveller attached to a message: an image or a PDF, as a data URL. */
+export type Attachment = { id: string; name: string; mime: string; data: string };
+
+/** One row of a departure board as read from a photo; `box` is [x_min, y_min, x_max, y_max] on a 0–1000 grid. */
+export type BoardRow = { time: string; flight: string; destination: string; gate: string | null; status: string; box: number[] };
+
+/** What Muse Spark read in an attachment (structured output). */
+export type Perception = {
+  kind: "trip_request" | "departure_board" | "boarding_pass" | "booking_confirmation" | "other";
+  summary: string;
+  facts: { label: string; value: string; box: number[] }[];
+  trip: {
+    destination_city: string | null;
+    destination_iata: string | null;
+    origin_city: string | null;
+    event: string | null;
+    event_date: string | null;
+    depart_date: string | null;
+    return_date: string | null;
+    people: string[];
+    notes: string | null;
+  };
+  board: { airport: string | null; rows: BoardRow[] };
+};
+
+/** The agent's reading of an attachment, drawn over it. `attachmentId` points at the file the browser still holds. */
+export type VisionBlock = {
+  kind: "vision";
+  id: string;
+  attachmentId: string;
+  name: string;
+  mime: string;
+  model: string;
+  perception?: Perception;
+  /** The traveller's own flight found on a departure board. */
+  match?: { rowIndex: number; flight: string; status: string; disrupted: boolean; pnr?: string };
+  error?: string;
+};
+
+/** Other flights for a booked one, each with what it costs to move: 0 when the airline owes the move. */
+export type RebookOption = { offerId: string; ref: string; slice: Slice; amount: number; currency: string; airline: string };
+
+export type RebookBlock = {
+  kind: "rebook";
+  id: string;
+  orderId: string;
+  pnr?: string;
+  reason: string;
+  current: Slice;
+  options: RebookOption[];
+  /** Set once the traveller switched: the option taken. */
+  switched?: string;
+};
+
+export type Block =
+  | OffersBlock
+  | CalendarBlock
+  | PricedBlock
+  | RepliesBlock
+  | SeatsBlock
+  | ExtrasBlock
+  | TravellersBlock
+  | ReviewBlock
+  | PaymentBlock
+  | BookingBlock
+  | VisionBlock
+  | RebookBlock;
 
 /** What a form in the chat sends with its message; the details stay on the server, the model sees a summary. */
 export type FormSubmission =
   | { kind: "seats"; skip?: boolean; seats?: { segment_id: string; row: number; column: string; passenger_id: string }[] }
   | { kind: "extras"; skip?: boolean; extras?: { service_id: string; passenger_id?: string }[] }
   | { kind: "travellers"; passengers: Passenger[]; contact: Contact }
-  | { kind: "payment"; card: { number: string; holder: string; expiry_month: number; expiry_year: number; cvv?: string } };
+  | { kind: "payment"; card: { number: string; holder: string; expiry_month: number; expiry_year: number; cvv?: string } }
+  /** Pressing Switch on an alternative: the traveller's consent to change a booked flight. */
+  | { kind: "change"; blockId: string; offerId: string };
 
 export type ToolStatus = "running" | "done" | "error";
 
@@ -281,6 +349,8 @@ export type AgentEvent =
   | { type: "block"; block: Block }
   | { type: "offers_append"; blockId: string; offers: Offer[]; airlines: string[] }
   | { type: "offers_final"; block: OffersBlock }
+  /** A block already in the chat, in any earlier message, replaced by its newer state. */
+  | { type: "patch"; block: Block }
   | { type: "trip"; trip: TripView }
   /** Airport and city names by IATA code, for every code the chat shows. */
   | { type: "places"; places: Record<string, string> }
@@ -289,7 +359,7 @@ export type AgentEvent =
 
 export type ChatPart = { kind: "text"; text: string } | { kind: "tool"; step: ToolStep } | { kind: "block"; block: Block };
 
-export type ChatMessage = { id: string; role: "user" | "assistant"; parts: ChatPart[]; at: number; failed?: string; form?: FormSubmission["kind"] };
+export type ChatMessage = { id: string; role: "user" | "assistant"; parts: ChatPart[]; at: number; failed?: string; form?: FormSubmission["kind"]; attachments?: Attachment[] };
 
 export type AppStatus = {
   brain: Brain;

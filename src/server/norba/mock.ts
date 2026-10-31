@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Airport, CabinClass, FareFamily, Offer, OfferQuote, Order, PricedOffer, SearchRequest, Seat, SeatMap, Segment, Service, Slice } from "@/lib/types";
 import { MOCK_AIRPORTS, MOCK_METROS, type MockAirport } from "./mock-airports";
-import { NorbaError, type CalendarQuery, type ChosenExtra, type ChosenSeat, type NorbaPort, type OrderRequest } from "./port";
+import { NorbaError, type CalendarQuery, type ChosenExtra, type ChosenSeat, type NorbaPort, type OrderRequest, type ReshopQuery } from "./port";
 
 /*
  * Mock mode: believable offers generated from the route and date, so the agent and the UI can be built and demoed
@@ -216,10 +216,57 @@ function validate(req: SearchRequest) {
 // ── Seats, extras and orders ─────────────────────────────────────────────────
 
 /** What the mock served, so a quote or an order prices only what was offered — as Norba does. */
-const priced = new Map<string, PricedOffer>();
-const seatMaps = new Map<string, SeatMap>();
-const serviceLists = new Map<string, Service[]>();
-const orders = new Map<string, Order>();
+/** The mock airline's memory, shared by API routes and pages (Next.js may load this module more than once). */
+type MockState = {
+  priced: Map<string, PricedOffer>;
+  seatMaps: Map<string, SeatMap>;
+  serviceLists: Map<string, Service[]>;
+  orders: Map<string, Order>;
+  ordersById: Map<string, Order>;
+  /** Reshop offers handed out, so a change can find what it accepts. */
+  reshopped: Map<string, { orderId: string; sliceIndex: number; offer: Offer }>;
+  /** Flights the airline cancelled, as `${order_id}|${sliceIndex}`: a rebooking off them costs nothing. */
+  disrupted: Set<string>;
+};
+const mockStore = globalThis as unknown as { __naMock?: MockState };
+const state: MockState = (mockStore.__naMock ??= {
+  priced: new Map(),
+  seatMaps: new Map(),
+  serviceLists: new Map(),
+  orders: new Map(),
+  ordersById: new Map(),
+  reshopped: new Map(),
+  disrupted: new Set(),
+});
+const { priced, seatMaps, serviceLists, orders, ordersById, reshopped, disrupted } = state;
+
+const shiftClock = (iso: string, minutes: number) => {
+  const tz = iso.slice(19);
+  const d = new Date(Date.parse(iso) + minutes * 60_000 + (tz ? Number(tz.slice(0, 3)) * 3_600_000 : 0));
+  return `${d.toISOString().slice(0, 19)}${tz}`;
+};
+
+/**
+ * The airline acts on a booked flight, for demos of what the agent does next: `cancelled` drops the flight from
+ * the schedule; `retimed` moves it by `minutes`, which is what a schedule change notice reports.
+ */
+export function mockDisrupt(orderId: string, sliceIndex: number, kind: "cancelled" | "retimed", minutes = 0) {
+  const order = ordersById.get(orderId);
+  const slice = order?.slices?.[sliceIndex];
+  if (!order || !slice) throw new NorbaError(`no mock order ${orderId} with flight ${sliceIndex + 1}`, 404, "order_not_found");
+  const before = structuredClone(slice);
+  disrupted.add(`${orderId}|${sliceIndex}`);
+  if (kind === "retimed") {
+    const moved: Slice = {
+      ...slice,
+      departure_utc: shiftClock(slice.departure_utc, minutes),
+      arrival_utc: shiftClock(slice.arrival_utc, minutes),
+      segments: slice.segments.map((g) => ({ ...g, departure_utc: shiftClock(g.departure_utc, minutes), arrival_utc: shiftClock(g.arrival_utc, minutes) })),
+    };
+    order.slices = order.slices!.map((x, i) => (i === sliceIndex ? moved : x));
+  }
+  return { order, before, after: order.slices![sliceIndex] };
+}
 
 /** Ticket stock prefixes of the mock's airlines. */
 const STOCK: Record<string, string> = { AA: "001", A3: "390", OA: "050", AF: "057", KL: "074" };
@@ -426,6 +473,7 @@ export const mockNorba: NorbaPort = {
       tickets: req.passengers.map((p) => ({ passenger_id: p.id, ticket_number: `${stock}-${String(Math.floor(rand() * 1e10)).padStart(10, "0")}`, status: "issued", type: "ticket" })),
     };
     orders.set(idempotencyKey, order);
+    ordersById.set(order.order_id, order);
     return { order, outcomeUnknown: false };
   },
 
@@ -436,5 +484,71 @@ export const mockNorba: NorbaPort = {
       { airline: "AF", name: "Air France", carriers: ["AF"] },
       { airline: "KL", name: "KLM", carriers: ["KL"] },
     ];
+  },
+
+  async getOrder(orderId) {
+    const order = ordersById.get(orderId);
+    if (!order) throw new NorbaError("order not found", 404, "order_not_found");
+    return order;
+  },
+
+  async reshop(order, q: ReshopQuery) {
+    await sleep(1400);
+    const slice = order.slices?.[q.sliceIndex];
+    if (!slice) throw new NorbaError("the order has no such flight", 400, "invalid_request");
+    const adults = Math.max(1, order.passengers?.length ?? 1);
+    const date = q.date ?? slice.departure_utc.slice(0, 10);
+    const all = [...generate({ origin: slice.origin, destination: slice.destination, departure_date: date, adults }).values()].flat();
+    const own = all.filter((o) => o.airline === order.airline);
+    const flightOf = (x: Slice) => x.segments.map((g) => g.flight_number).join("+");
+    const was = flightOf(slice);
+    const free = disrupted.has(`${order.order_id}|${q.sliceIndex}`);
+    const share = (order.total_amount ?? 0) / Math.max(1, order.slices?.length ?? 1);
+    // One fare per flight, the cheapest: a rebooking keeps the fare the traveller already holds.
+    const byFlight = new Map<string, Offer>();
+    for (const o of own.length ? own : all) {
+      const key = flightOf(o.slices[0]);
+      if (key === was) continue;
+      if (!byFlight.has(key) || byFlight.get(key)!.total_amount > o.total_amount) byFlight.set(key, o);
+    }
+    return [...byFlight.values()]
+      .sort((a, b) => Date.parse(a.slices[0].departure_utc) - Date.parse(b.slices[0].departure_utc))
+      .slice(0, 5)
+      .map((o, i) => {
+        const offer: Offer = {
+          ...o,
+          offer_id: `RS-${order.order_id}-${q.sliceIndex}-${i}`,
+          total_amount: free ? 0 : Math.max(0, Math.round(o.total_amount - share)),
+          currency: order.currency ?? o.currency,
+        };
+        reshopped.set(offer.offer_id, { orderId: order.order_id, sliceIndex: q.sliceIndex, offer });
+        return offer;
+      });
+  },
+
+  async changeOrder(order, offerId, idempotencyKey, payment) {
+    const replay = orders.get(idempotencyKey);
+    if (replay) return { order: replay, outcomeUnknown: false };
+    const hit = reshopped.get(offerId);
+    if (!hit || hit.orderId !== order.order_id) throw new NorbaError("that alternative is not on offer for this order any more", 409, "offer_expired");
+    if (hit.offer.total_amount > 0 && !payment) throw new NorbaError(`the change costs ${hit.offer.total_amount} ${hit.offer.currency}: a payment is needed`, 400, "payment_required_for_change");
+    await sleep(2200);
+    const current = ordersById.get(order.order_id) ?? order;
+    const rand = rng(idempotencyKey);
+    const stock = STOCK[current.airline] ?? "999";
+    const next: Order = {
+      ...current,
+      status: "ticketed",
+      total_amount: (current.total_amount ?? 0) + hit.offer.total_amount,
+      slices: current.slices!.map((x, i) => (i === hit.sliceIndex ? hit.offer.slices[0] : x)),
+      tickets: [
+        ...(current.tickets ?? []).map((t) => ({ ...t, status: t.status === "issued" ? "exchanged" : t.status })),
+        ...(current.passengers ?? []).map((p) => ({ passenger_id: p.id, ticket_number: `${stock}-${String(Math.floor(rand() * 1e10)).padStart(10, "0")}`, status: "issued", type: "ticket" })),
+      ],
+    };
+    disrupted.delete(`${current.order_id}|${hit.sliceIndex}`);
+    ordersById.set(next.order_id, next);
+    orders.set(idempotencyKey, next);
+    return { order: next, outcomeUnknown: false };
   },
 };

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import type { ChatMessage, FormSubmission } from "@/lib/types";
+import type { Attachment, ChatMessage, FormSubmission } from "@/lib/types";
 import { AppFooter } from "../app-footer";
 import { AppHeader } from "../app-header";
 import { ChatContext, highlightRef, type ChatActions } from "./chat-context";
@@ -14,7 +14,7 @@ import { useAgent } from "./use-agent";
 import { cn } from "@/lib/utils";
 
 export function AgentChat() {
-  const { messages, busy, trip, places, send, stop, reset } = useAgent();
+  const { messages, busy, trip, places, send, stop, reset, conversationId } = useAgent();
   // The chat scrolls inside its own box: the page is one screen tall, so nothing that grows or folds moves the footer.
   const box = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -64,18 +64,19 @@ export function AgentChat() {
   }, []);
 
   const onSend = useCallback(
-    (t: string, form?: FormSubmission) => {
+    (t: string, form?: FormSubmission, attachments?: Attachment[]) => {
       stick.current = true;
-      send(t, form);
+      send(t, form, attachments);
     },
     [send],
   );
+  const attachment = useCallback((id: string) => messages.flatMap((m) => m.attachments ?? []).find((a) => a.id === id), [messages]);
 
   const latestOffers = useMemo(() => {
     const ids = messages.flatMap((m) => m.parts.flatMap((p) => (p.kind === "block" && p.block.kind === "offers" ? [p.block.id] : [])));
     return ids.at(-1);
   }, [messages]);
-  const actions: ChatActions = useMemo(() => ({ send: onSend, busy, trip, places, highlight, latestOffers }), [onSend, busy, trip, places, highlight, latestOffers]);
+  const actions: ChatActions = useMemo(() => ({ send: onSend, busy, trip, places, highlight, latestOffers, attachment, conversationId }), [onSend, busy, trip, places, highlight, latestOffers, attachment, conversationId]);
   const lastAgent = messages.findLast((m) => m.role === "assistant");
   // What the chat shows: a form's answer lives in its folded card, not in a bubble; settled booking turns that follow
   // one another read as one short list.
@@ -100,7 +101,7 @@ export function AgentChat() {
       <div className="flex h-dvh flex-col overflow-hidden">
         <AppHeader onNewChat={empty ? undefined : reset} />
         {/* The trip's steps join once there is a trip to follow: the first message brings them in. */}
-        <div className={cn("mx-auto grid min-h-0 w-full max-w-[1440px] flex-1 gap-x-8 px-5 md:px-10", !empty && "lg:grid-cols-[264px_minmax(0,1fr)]")}>
+        <div className={cn("mx-auto grid min-h-0 w-full max-w-[1120px] flex-1 gap-x-8 px-5 md:px-10", !empty && "lg:grid-cols-[264px_minmax(0,1fr)]")}>
           {!empty && (
             <aside className="na-in hidden min-h-0 overflow-y-auto overscroll-contain pb-6 pt-8 lg:block">
               <TripPanel trip={trip} busy={busy} />
@@ -115,9 +116,11 @@ export function AgentChat() {
             )}
             <main ref={box} className="-mx-5 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 md:-mx-10 md:px-10 lg:-mr-10 lg:ml-0 lg:pl-0">
               {empty ? (
-                <EmptyState />
+                <div className="mx-auto max-w-[760px]">
+                  <EmptyState />
+                </div>
               ) : (
-                <div ref={content} className="space-y-6 pb-8 pt-6">
+                <div ref={content} className="mx-auto max-w-[760px] space-y-6 pb-8 pt-6">
                   {turns.map((t) =>
                     t.kind === "settled" ? (
                       <div key={t.key} className="space-y-0.5">
@@ -136,14 +139,16 @@ export function AgentChat() {
             </main>
             {/* The message box sits clear of the footer: air below it, a rule above it. */}
             <div className="-mx-5 shrink-0 border-t border-hr-line px-5 pb-5 pt-3 md:-mx-10 md:px-10 md:pb-6 lg:mx-0 lg:px-0">
-              <Composer
-                onSend={(t) => onSend(t)}
-                onStop={stop}
-                busy={busy}
-                autoFocus
-                placeholder={empty ? "Madrid to Athens next Friday, back Sunday…" : trip.pnr ? "Plan another trip…" : "Only non-stop, after 10:00, with a bag…"}
-              />
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-4">Live airline prices · nothing is charged until you press Pay</p>
+              <div className="mx-auto max-w-[760px]">
+                <Composer
+                  onSend={(t, files) => onSend(t, undefined, files)}
+                  onStop={stop}
+                  busy={busy}
+                  autoFocus
+                  placeholder={empty ? "Madrid to Athens next Friday… or drop an invitation, a screenshot, a photo" : trip.pnr ? "Plan another trip, or send a photo of the departure board…" : "Only non-stop, after 10:00, with a bag…"}
+                />
+                <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-4">Live airline prices · nothing is charged until you press Pay</p>
+              </div>
             </div>
           </div>
         </div>

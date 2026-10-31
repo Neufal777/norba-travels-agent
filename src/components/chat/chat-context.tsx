@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 import { emptyTrip } from "@/lib/steps";
-import type { FormSubmission, TripView } from "@/lib/types";
+import type { Attachment, FormSubmission, TripView } from "@/lib/types";
 
 export type ChatActions = {
   /** With `form`, the text is what the traveller sees in their bubble; the details travel in the form. */
@@ -15,9 +15,13 @@ export type ChatActions = {
   latestOffers?: string;
   /** Scrolls to the card of an offer ref (o4) and flashes it. */
   highlight: (ref: string) => void;
+  /** A file the traveller attached in this conversation, still in the browser: what vision blocks draw over. */
+  attachment: (id: string) => Attachment | undefined;
+  /** The server's id for this conversation, once it answered once. */
+  conversationId: () => string | undefined;
 };
 
-export const ChatContext = createContext<ChatActions>({ send: () => {}, busy: false, trip: emptyTrip(), places: {}, highlight: () => {} });
+export const ChatContext = createContext<ChatActions>({ send: () => {}, busy: false, trip: emptyTrip(), places: {}, highlight: () => {}, attachment: () => undefined, conversationId: () => undefined });
 
 /** Spanish when the browser is, for the lines a form sends on the traveller's behalf. */
 export const es = () => typeof navigator !== "undefined" && navigator.language.startsWith("es");

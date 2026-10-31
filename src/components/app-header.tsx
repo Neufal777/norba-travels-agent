@@ -15,7 +15,7 @@ const ENV_LABEL = { sandbox: "Sandbox", production: "Production", mock: "Mock da
 function HackathonStrip() {
   return (
     <div className="border-b border-hr-line bg-hr-surface-2">
-      <div className="mx-auto flex h-9 w-full max-w-[1440px] items-center gap-3 px-5 md:px-10">
+      <div className="mx-auto flex h-9 w-full max-w-[1120px] items-center gap-3 px-5 md:px-10">
         <HackathonHosts size={20} />
         <p className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3">
           <span className="text-hr-ink-strong">Meta Global AI Developer Hackathon</span>
@@ -42,7 +42,7 @@ export function AppHeader({ onNewChat }: { onNewChat?: () => void }) {
   return (
     <header className="hr-frost relative z-40 shrink-0 border-b border-hr-line">
       <HackathonStrip />
-      <div className="mx-auto flex h-12 w-full max-w-[1440px] items-center gap-x-6 px-5 md:px-10">
+      <div className="mx-auto flex h-12 w-full max-w-[1120px] items-center gap-x-6 px-5 md:px-10">
         <Link href="/" onClick={onNewChat} className="cursor-pointer no-underline">
           <NorbaWordmark sub="Travels Agent" />
         </Link>

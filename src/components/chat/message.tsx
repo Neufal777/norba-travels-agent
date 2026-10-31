@@ -1,6 +1,7 @@
 "use client";
 
 import type { Block, ChatMessage, TripView } from "@/lib/types";
+import { FileText } from "lucide-react";
 import { NorbaLogo } from "../brand";
 import { Pulse, Sq } from "../status";
 import { BookingResult } from "./booking-block";
@@ -13,7 +14,9 @@ import { Replies } from "./replies-block";
 import { ReviewResult } from "./review-block";
 import { SeatsResult } from "./seats-block";
 import { TravellersResult } from "./travellers-block";
+import { RebookResult } from "./rebook-block";
 import { RichText } from "./rich-text";
+import { VisionResult } from "./vision-block";
 import { ToolStepRow } from "./tool-step";
 
 function BlockView({ block, live }: { block: Block; live: boolean }) {
@@ -38,14 +41,34 @@ function BlockView({ block, live }: { block: Block; live: boolean }) {
       return <PaymentResult block={block} />;
     case "booking":
       return <BookingResult block={block} />;
+    case "vision":
+      return <VisionResult block={block} />;
+    case "rebook":
+      return <RebookResult block={block} />;
   }
 }
 
 export function UserMessage({ m }: { m: ChatMessage }) {
   const text = m.parts[0]?.kind === "text" ? m.parts[0].text : "";
   return (
-    <div className="na-in flex justify-end">
-      <p className="max-w-[min(36rem,85%)] whitespace-pre-wrap bg-hr-signal px-3.5 py-2 text-[14px] leading-[1.5] text-hr-ink-strong">{text}</p>
+    <div className="na-in flex flex-col items-end gap-1.5">
+      {m.attachments?.length ? (
+        <ul className="flex flex-wrap justify-end gap-1.5">
+          {m.attachments.map((a) => (
+            <li key={a.id} className="border border-hr-line-strong bg-hr-signal">
+              {a.mime.startsWith("image/") ? (
+                // eslint-disable-next-line @next/next/no-img-element -- the traveller's own file, held in the browser
+                <img src={a.data} alt={a.name} className="block h-28 w-auto max-w-56 object-cover" />
+              ) : (
+                <span className="flex h-12 items-center gap-2 px-3 text-[12.5px] text-hr-ink-2">
+                  <FileText className="size-4" /> {a.name}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {text && <p className="max-w-[min(36rem,85%)] whitespace-pre-wrap bg-hr-signal px-3.5 py-2 text-[14px] leading-[1.5] text-hr-ink-strong">{text}</p>}
     </div>
   );
 }

@@ -51,3 +51,11 @@ export const viaAirports = (s: Slice) => s.segments.slice(0, -1).map((g) => g.de
 export const carriers = (o: Offer) => [...new Set(o.slices.flatMap((s) => s.segments.map((g) => g.operating_carrier || g.marketing_carrier || o.airline)))];
 
 export const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** "A3 703" from the carrier and a flight number that may or may not carry it already ("703", "A3703"). */
+export function flightLabel(carrier: string | undefined, flightNumber: string | undefined) {
+  const fn = (flightNumber ?? "").trim().toUpperCase();
+  const c = (carrier ?? "").toUpperCase();
+  if (!c) return fn;
+  return fn.startsWith(c) ? `${c} ${fn.slice(c.length).trim()}` : `${c} ${fn}`;
+}

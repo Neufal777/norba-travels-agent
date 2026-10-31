@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { emptyTrip } from "@/lib/steps";
-import type { AgentEvent, Block, Brain, ChatMessage, ChatPart, FormSubmission, TripView } from "@/lib/types";
+import type { AgentEvent, Attachment, Block, Brain, ChatMessage, ChatPart, FormSubmission, TripView } from "@/lib/types";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -64,11 +64,12 @@ export function useAgent() {
 
   const send = useCallback(
     /** `form` sends a form's answer; `raw` is then the line the traveller sees, never the details themselves. */
-    async (raw: string, form?: FormSubmission) => {
+    async (raw: string, form?: FormSubmission, attachments: Attachment[] = []) => {
       const text = raw.trim();
-      if (!text || busy) return;
+      if ((!text && !attachments.length) || busy) return;
       const reply: ChatMessage = { id: uid(), role: "assistant", parts: [], at: Date.now() };
-      setMessages((all) => [...all, { id: uid(), role: "user", parts: [{ kind: "text", text }], at: Date.now(), form: form?.kind }, reply]);
+      const mine: ChatMessage = { id: uid(), role: "user", parts: text ? [{ kind: "text", text }] : [], at: Date.now(), form: form?.kind, attachments: attachments.length ? attachments : undefined };
+      setMessages((all) => [...all, mine, reply]);
       setBusy(true);
       const ac = new AbortController();
       abort.current = ac;
@@ -80,6 +81,7 @@ export function useAgent() {
             conversationId: conversation.current,
             message: text,
             form,
+            attachments: attachments.length ? attachments : undefined,
             context: { today: new Date().toLocaleDateString("en-CA"), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, locale: navigator.language },
           }),
           signal: ac.signal,
@@ -96,6 +98,9 @@ export function useAgent() {
             setTrip(e.trip);
           } else if (e.type === "places") {
             setPlaces((known) => ({ ...known, ...e.places }));
+          } else if (e.type === "patch") {
+            // A block from an earlier message (a rebooking that was switched, a group trip being paid) moves on.
+            setMessages((all) => all.map((m) => (m.parts.some((p) => p.kind === "block" && p.block.id === e.block.id) ? { ...m, parts: m.parts.map((p) => (p.kind === "block" && p.block.id === e.block.id ? { kind: "block", block: e.block } : p)) } : m)));
           } else if (e.type === "error") {
             patch(reply.id, (m) => ({ ...m, failed: e.message }));
           } else if (e.type !== "done") {
@@ -123,5 +128,5 @@ export function useAgent() {
     setTrip(emptyTrip());
   }, []);
 
-  return { messages, busy, brain, trip, places, send, stop, reset };
+  return { messages, busy, brain, trip, places, send, stop, reset, conversationId: () => conversation.current };
 }

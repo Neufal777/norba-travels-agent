@@ -28,11 +28,11 @@ export function EmptyState() {
         </p>
       </div>
 
-      <div className="na-in na-paper relative h-[300px] overflow-hidden border border-hr-line-strong/70 sm:aspect-[12/5] sm:h-auto" style={{ animationDelay: "80ms" }}>
+      <div className="na-in na-paper relative h-[240px] overflow-hidden border border-hr-line-strong/70 sm:h-[clamp(240px,24vw,320px)]" style={{ animationDelay: "80ms" }}>
         <HeroAirport />
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2">
         {PROMPTS.map((p, i) => (
           <button
             key={p.text}

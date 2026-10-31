@@ -40,6 +40,7 @@ Files and photos
 - A departure board photo is checked against their bookings. If the note says MATCH and disrupted, say in one sentence what the board shows for their flight, then call find_rebooking for that booking at once.
 
 After the booking
+- A message starting with [Airline notice] is the airline changing a booking on its own: say in one plain sentence what changed for the traveller (local times), mention the group if the note says the booking is part of one, then call find_rebooking.
 - When a booked flight is cancelled, delayed or moved (board photo, airline notice, or the traveller asks), call find_rebooking. The traveller switches with the button; you never change a booking. A message starting with [Change result] tells you how it went.
 
 Always

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { AgentEvent, Offer, OffersBlock, Order, SearchRequest } from "@/lib/types";
 import type { StoredGroup } from "./group";
+import type { Notice } from "./guardian";
 import type { ChatTurn } from "../llm/types";
 import type { StoredRebook } from "./servicing-tools";
 import { newTrip, type TripState } from "./trip";
@@ -34,6 +35,8 @@ export type Session = {
   rebooks: Map<string, StoredRebook>;
   /** The booked flight a board photo or an airline notice says is disrupted. */
   disruption?: { orderId: string; sliceIndex: number };
+  /** Airline notices received for this conversation's bookings, newest last. */
+  notices: Notice[];
   /** Group trips planned, by block id. */
   groups: Map<string, StoredGroup>;
   /**
@@ -67,10 +70,15 @@ export function session(id?: string): Session {
     found.touched = Date.now();
     return found;
   }
-  const s: Session = { id: id && /^[\w-]{8,64}$/.test(id) ? id : crypto.randomUUID(), turns: [], searches: [], offers: new Map(), nextRef: 1, draft: { adults: 1 }, trip: newTrip(), places: new Map(), orders: [], rebooks: new Map(), groups: new Map(), outbox: [], seq: 0, touched: Date.now(), busy: false };
+  const s: Session = { id: id && /^[\w-]{8,64}$/.test(id) ? id : crypto.randomUUID(), turns: [], searches: [], offers: new Map(), nextRef: 1, draft: { adults: 1 }, trip: newTrip(), places: new Map(), orders: [], rebooks: new Map(), groups: new Map(), notices: [], outbox: [], seq: 0, touched: Date.now(), busy: false };
   sessions.set(s.id, s);
   return s;
 }
+
+/** Which conversation booked which order: an airline notice only knows the order. */
+const owners = ((globalThis as unknown as { __naOrderSessions?: Map<string, string> }).__naOrderSessions ??= new Map<string, string>());
+export const ownOrder = (s: Session, orderId: string) => owners.set(orderId, s.id);
+export const ownerOf = (orderId: string) => owners.get(orderId);
 
 /** Queues an event for the chat's next poll; the newest 200 are kept. */
 export function pushUpdate(s: Session, event: AgentEvent) {

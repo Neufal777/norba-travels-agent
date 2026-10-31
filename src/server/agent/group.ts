@@ -9,6 +9,7 @@ import { modelLabel, structured } from "../llm/meta";
 import { norba } from "../norba";
 import { onPaid, openCheckout, slotsFor } from "../checkout";
 import { learnPlaces, offerCodes, placeLabel, rememberAirports } from "./places";
+import { keepOrder } from "./servicing-tools";
 import { pushUpdate, type Session } from "./sessions";
 import { resetFrom, step } from "./trip";
 import { blockId, failure, str, type Tool, type ToolContext } from "./tools";
@@ -340,7 +341,7 @@ export const holdGroup: Tool = {
           // When they pay — maybe hours later, on their own phone — the chat hears of it on its next poll.
           onPaid(c.token, (paid) => {
             lane.hold = { ...lane.hold!, paid: true, pnr: paid.order?.pnr };
-            if (paid.order) s.orders.push(paid.order);
+            if (paid.order) keepOrder(s, paid.order);
             pushUpdate(s, { type: "patch", block: structuredClone(b) });
             const n = b.lanes.filter((l) => l.hold?.paid).length;
             const quiet = { session: s, emit: (e: Parameters<ToolContext["emit"]>[0]) => pushUpdate(s, e) };

@@ -358,6 +358,21 @@ export type GroupBlock = {
   holding?: boolean;
 };
 
+/** One flight of an airline's schedule change: null `before` for a flight added, null `after` for one cancelled. */
+export type NoticeFlight = { flight_number: string; origin: string; destination: string; departure_utc: string; arrival_utc: string } | null;
+
+/** An airline changed a booking on its own initiative: what moved, and the notice as the airline sent it. */
+export type NoticeBlock = {
+  kind: "notice";
+  id: string;
+  orderId: string;
+  pnr?: string;
+  airline: string;
+  changes: { before: NoticeFlight; after: NoticeFlight }[];
+  raw: string;
+  simulated: boolean;
+};
+
 export type Block =
   | OffersBlock
   | CalendarBlock
@@ -371,7 +386,8 @@ export type Block =
   | BookingBlock
   | VisionBlock
   | RebookBlock
-  | GroupBlock;
+  | GroupBlock
+  | NoticeBlock;
 
 /** What a form in the chat sends with its message; the details stay on the server, the model sees a summary. */
 export type FormSubmission =
@@ -382,7 +398,9 @@ export type FormSubmission =
   /** Pressing Switch on an alternative: the traveller's consent to change a booked flight. */
   | { kind: "change"; blockId: string; offerId: string }
   /** Pressing Hold on a group plan: price every chosen flight and give each traveller a checkout link. */
-  | { kind: "group_hold"; blockId: string };
+  | { kind: "group_hold"; blockId: string }
+  /** Sent by the chat itself when an airline notice arrives: the agent reads it and acts. */
+  | { kind: "notice"; noticeId: string };
 
 export type ToolStatus = "running" | "done" | "error";
 
@@ -400,6 +418,8 @@ export type AgentEvent =
   | { type: "offers_final"; block: OffersBlock }
   /** A block already in the chat, in any earlier message, replaced by its newer state. */
   | { type: "patch"; block: Block }
+  /** An airline notice arrived for a booking of this conversation: the chat hands it to the agent. */
+  | { type: "notice"; noticeId: string }
   | { type: "trip"; trip: TripView }
   /** Airport and city names by IATA code, for every code the chat shows. */
   | { type: "places"; places: Record<string, string> }

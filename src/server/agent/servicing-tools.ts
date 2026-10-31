@@ -5,7 +5,7 @@ import { clock, dateLabel, money } from "@/lib/format";
 import type { Order, RebookBlock, RebookOption } from "@/lib/types";
 import { norba } from "../norba";
 import { learnPlaces, offerCodes, placeLabel } from "./places";
-import type { Session } from "./sessions";
+import { ownOrder, type Session } from "./sessions";
 import { blockId, failure, str, type Tool, type ToolContext } from "./tools";
 
 /*
@@ -27,6 +27,7 @@ export function findOrder(s: Session, ref?: string): Order | undefined {
 
 /** Replaces a conversation's copy of an order with what the airline answered. */
 export function keepOrder(s: Session, order: Order) {
+  ownOrder(s, order.order_id);
   const i = s.orders.findIndex((o) => o.order_id === order.order_id);
   if (i >= 0) s.orders[i] = order;
   else s.orders.push(order);

@@ -11,7 +11,7 @@ import { Place } from "./place";
 
 /** The order the airline made: booking reference, status, the travellers' e-tickets and the flights. */
 export function BookingResult({ block }: { block: BookingBlock }) {
-  const { conversationId } = useChat();
+  const { conversationId, busy } = useChat();
   const o = block.order;
   const id = conversationId();
   const name = (pid?: string) => {
@@ -60,7 +60,17 @@ export function BookingResult({ block }: { block: BookingBlock }) {
               ))}
             </ul>
           )}
-          {/* Test bookings only: a departure board showing this flight cancelled, to photograph for the demo. */}
+          {/* Test bookings only: the airline moving this flight, and a departure board showing it cancelled, for the demo. */}
+          {o.environment !== "production" && id && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => fetch("/api/simulate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: id, minutes: 240 }) })}
+              className="mr-4 inline-flex cursor-pointer items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 transition-colors hover:text-hr-ink-strong disabled:cursor-default disabled:opacity-50"
+            >
+              Simulate: airline moves this flight +4h
+            </button>
+          )}
           {o.environment !== "production" && id && (
             <a
               href={`/board?c=${encodeURIComponent(id)}&status=CANCELLED`}

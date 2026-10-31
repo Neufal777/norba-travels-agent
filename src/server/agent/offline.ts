@@ -242,6 +242,8 @@ const L = {
     bookedSandbox: "Reserva de pruebas: no se ha cobrado nada.",
     switched: "Cambiado. Tu reserva ya tiene el vuelo nuevo.",
     held: "Plazas retenidas. Cada uno tiene su enlace para pagar el suyo.",
+    noticeReason: "La aerolínea ha cambiado tu vuelo",
+    noticeMoved: "La aerolínea ha movido tu vuelo. Aquí tienes otras opciones; cambia con un toque si te viene mejor.",
     needsVision: "Para leer archivos necesito Muse Spark: falta MODEL_API_KEY.",
     bookFailed: (why: string) => `La reserva no se ha completado: ${why}`,
     unknownOutcome: "La aerolínea no ha respondido y la tarjeta podría haberse cargado. **No vuelvas a pagar**: contacta con soporte.",
@@ -277,6 +279,8 @@ const L = {
     bookedSandbox: "Sandbox booking: nothing was charged.",
     switched: "Done. Your booking has the new flight.",
     held: "Seats held. Everyone has their own link to pay.",
+    noticeReason: "The airline changed your flight",
+    noticeMoved: "The airline moved your flight. Here are other options; switch with one tap if one suits you better.",
     needsVision: "Reading files needs Muse Spark: MODEL_API_KEY is not set.",
     bookFailed: (why: string) => `The booking did not go through: ${why}`,
     unknownOutcome: "The airline did not answer and the card may have been charged. **Do not pay again**: contact support.",
@@ -387,6 +391,10 @@ export async function runOffline(turn: Turn) {
   const trip = session.trip;
 
   // A form answered in the chat moves the booking on.
+  if (turn.form?.kind === "notice") {
+    const out = await callTool("find_rebooking", { reason: l.noticeReason }, ctx);
+    return say(ctx, out.content.startsWith("ERROR") ? `${l.failed}${clean(out.content)}` : l.noticeMoved);
+  }
   if (turn.form?.kind === "group_hold") return say(ctx, turn.booking!.content.startsWith("ERROR") ? `${l.failed}${clean(turn.booking!.content)}` : l.held);
   if (turn.form?.kind === "change") {
     const b = turn.booking!;

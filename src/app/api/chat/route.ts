@@ -14,7 +14,7 @@ const MAX_ATTACHMENTS = 3;
 
 type Body = { conversationId?: string; message?: string; form?: FormSubmission; attachments?: Attachment[]; context?: { today?: string; timeZone?: string; locale?: string } };
 
-const FORMS = ["seats", "extras", "travellers", "payment", "change", "group_hold"];
+const FORMS = ["seats", "extras", "travellers", "payment", "change", "group_hold", "notice"];
 
 /** This app as seen from outside: PUBLIC_URL when set, otherwise the host the request came to. */
 function publicOrigin(req: Request) {

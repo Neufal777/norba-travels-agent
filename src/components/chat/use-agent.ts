@@ -134,11 +134,16 @@ export function useAgent() {
         for (const e of j.events) {
           if (e.type === "patch") replaceBlock(e.block);
           else if (e.type === "trip") setTrip(e.trip);
+          // An airline notice: the agent takes it at once, as if the traveller had forwarded it.
+          else if (e.type === "notice") void sendRef.current("Airline notice", { kind: "notice", noticeId: e.noticeId });
         }
       } catch {}
     }, 4000);
     return () => clearInterval(id);
   }, [busy]);
+
+  const sendRef = useRef(send);
+  sendRef.current = send;
 
   const stop = useCallback(() => abort.current?.abort(), []);
 

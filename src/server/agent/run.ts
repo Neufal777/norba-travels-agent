@@ -13,6 +13,7 @@ import { callTool } from "./steps";
 import type { ToolContext, ToolOutcome } from "./tools";
 import { publish, step } from "./trip";
 import { matchBoard, perceive, perceptionNote } from "./vision";
+import { noticeTurn } from "./guardian";
 
 /** Model ↔ tool round trips per message: from a search to the payment form fits with room to spare. */
 const MAX_ROUNDS = 8;
@@ -54,6 +55,9 @@ export async function runAgent(input: RunInput) {
     turn.formNote = "[Switch] The traveller pressed Switch on an alternative flight.";
     turn.resultLabel = "Change result";
     turn.booking = await callTool("change_flight", { blockId: input.form.blockId, offerId: input.form.offerId }, ctx);
+  } else if (input.form?.kind === "notice") {
+    // The airline changed a booking: the agent reads the notice and looks for something better at once.
+    turn.formNote = await noticeTurn(session, input.form.noticeId, emit);
   } else if (input.form?.kind === "group_hold") {
     // Pressing Hold prices everyone's flights; nobody pays until they open their own link.
     turn.formNote = "[Hold] The traveller pressed Hold seats on the group plan.";

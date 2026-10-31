@@ -221,7 +221,9 @@ export function ItineraryCard({
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             {it.offers.length > 1 && (
-              <div className="flex border border-hr-line" role="radiogroup" aria-label="Fare">
+              // Airlines sell five or six fares with long names ("Premium Economy Flexible"): each fare stays on one
+              // line and the row wraps, so no name breaks inside its box or runs under the price.
+              <div className="flex min-w-0 flex-wrap gap-1" role="radiogroup" aria-label="Fare">
                 {it.offers.map((o) => (
                   <button
                     key={o.offer_id}
@@ -231,13 +233,13 @@ export function ItineraryCard({
                     onClick={() => setChosen(o.offer_id)}
                     title={`${o.fare_family?.name ?? "Fare"} · ${money(o.total_amount, o.currency)}${o.baggage_included ? " · checked bag" : ""}`}
                     className={cn(
-                      "inline-flex h-6 cursor-pointer items-center gap-1.5 border-r border-hr-line px-2 text-[11px] transition-colors duration-300 last:border-r-0",
-                      o.offer_id === chosen ? "bg-hr-ink-strong text-hr-surface" : "text-hr-ink-2 hover:bg-hr-highlight hover:text-hr-ink-strong",
+                      "inline-flex h-6 max-w-full shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap border px-2 text-[11px] transition-colors duration-300",
+                      o.offer_id === chosen ? "border-hr-ink-strong bg-hr-ink-strong text-hr-surface" : "border-hr-line text-hr-ink-2 hover:border-hr-ink-strong hover:text-hr-ink-strong",
                     )}
                   >
-                    {o.fare_family?.name ?? "Fare"}
-                    {o.baggage_included && <Luggage className="size-3 opacity-70" aria-label="Checked bag included" />}
-                    <span className="font-mono text-[10px] tabular-nums opacity-80">{money(o.total_amount, o.currency)}</span>
+                    <span className="min-w-0 truncate">{o.fare_family?.name ?? "Fare"}</span>
+                    {o.baggage_included && <Luggage className="size-3 shrink-0 opacity-70" aria-label="Checked bag included" />}
+                    <span className="shrink-0 font-mono text-[10px] tabular-nums opacity-80">{money(o.total_amount, o.currency)}</span>
                   </button>
                 ))}
               </div>

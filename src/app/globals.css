@@ -444,6 +444,9 @@
 @keyframes na-board-blink {
   50% { opacity: 0.15; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .na-board-blink { animation: none; }
+}
 
 /* Vision: a scan line crosses the file while Muse Spark reads it; each box it found is drawn in. */
 .na-scan {

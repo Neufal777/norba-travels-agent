@@ -190,7 +190,7 @@ export async function draft(request: string, policy: { text?: string; pdf?: stri
     () =>
       structured<{ subject: string; body: string }>(
         [
-          { role: "system", content: "You write short, warm replies from a travel agency to its client. Offer the policy-compliant options (at most three, best first, with times and prices), say plainly why a requested option is not offered when the policy rules it out, and end by saying a payment link follows once they choose. No placeholders." },
+          { role: "system", content: "You write short, warm replies from a travel agency to its client. Offer the policy-compliant options (at most three, best first, with times and prices), preferring those whose times match what the client asked (an evening return, a meeting to reach); if none match, say so in one sentence. Say plainly why a requested option is not offered when the policy rules it out, and end by saying a payment link follows once they choose. No placeholders." },
           { role: "user", content: `Client: ${reading.traveller_name}\nRequest: ${request}\nCompliant options:\n${options.filter((o) => o.compliant).map((o) => `- ${optionLine(o)}`).join("\n") || "none"}\nRuled out by policy:\n${options.filter((o) => !o.compliant).map((o) => `- ${optionLine(o)}: ${o.violations.join("; ")}`).join("\n") || "none"}` },
         ],
         "agency_reply",

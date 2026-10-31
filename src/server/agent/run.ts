@@ -110,6 +110,8 @@ async function runModel(input: Turn, ctx: ToolContext) {
       const out = await callTool(call.function.name, args, ctx);
       session.turns.push({ role: "tool", tool_call_id: call.id, content: out.content });
     }
+    // Reply chips are the last thing a turn shows: asking the model again would only make it talk twice (and cost a call).
+    if (r.toolCalls.every((c) => c.function.name === "suggest_replies")) break;
     if (round === MAX_ROUNDS - 1) emit({ type: "text", delta: "\n\nI stopped there to keep things quick — tell me how to continue." });
   }
 }

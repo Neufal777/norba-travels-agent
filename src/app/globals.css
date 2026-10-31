@@ -1,0 +1,598 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Visual language: Norba's neutrals and Vermilion accent (norba.io), with Ticket Pilot's square corners, hairline
+ * borders, mono uppercase eyebrows and 6px square markers. The `hr-*` names are the tokens' roles, not their hues:
+ * `rust` is the accent.
+ */
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), Arial, sans-serif;
+  --font-body: var(--font-geist-sans), Arial, sans-serif;
+  --font-display: var(--font-geist-sans), Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Raw palette */
+  --color-hr-obsidian: var(--hr-obsidian);
+  --color-hr-carbon: var(--hr-carbon);
+  --color-hr-concrete: var(--hr-concrete);
+  --color-hr-stone: var(--hr-stone);
+  --color-hr-signal: var(--hr-signal);
+  --color-hr-lumen: var(--hr-lumen);
+  --color-hr-coal: var(--hr-coal);
+  --color-hr-rust: var(--hr-rust);
+  --color-hr-rust-deep: var(--hr-rust-deep);
+  --color-hr-success: var(--hr-success);
+  --color-hr-alert: var(--hr-alert);
+
+  /* Mode-aware roles */
+  --color-hr-surface: var(--hr-surface);
+  --color-hr-surface-2: var(--hr-surface-2);
+  --color-hr-panel: var(--hr-panel);
+  --color-hr-ink-strong: var(--hr-ink-strong);
+  --color-hr-ink-1: var(--hr-ink-1);
+  --color-hr-ink-2: var(--hr-ink-2);
+  --color-hr-ink-3: var(--hr-ink-3);
+  --color-hr-ink-4: var(--hr-ink-4);
+  --color-hr-line: var(--hr-line);
+  --color-hr-line-strong: var(--hr-line-strong);
+  --color-hr-line-warm: var(--hr-line-warm);
+  --color-hr-border-cta: var(--hr-border-cta);
+  --color-hr-cta-solid-bg: var(--hr-cta-solid-bg);
+  --color-hr-cta-solid-fg: var(--hr-cta-solid-fg);
+  --color-hr-cta-fill: var(--hr-cta-fill);
+  --color-hr-highlight: var(--hr-highlight);
+  --color-viz-1: var(--viz-1);
+  --color-viz-2: var(--viz-2);
+  --color-viz-3: var(--viz-3);
+  --color-viz-4: var(--viz-4);
+  --color-viz-in: var(--viz-in);
+  --color-viz-out: var(--viz-out);
+
+  /* shadcn roles mapped onto the palette */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 8px 32px -12px color-mix(in srgb, var(--hr-obsidian) 18%, transparent);
+
+  --ease-hr: cubic-bezier(0.33, 0, 0.15, 1);
+  --ease-hr-soft: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/*
+ * The Norba palette, as on norba.io: five neutrals and one accent.
+ *   Cloud White #fafafa · Mist Gray #eeeeee · Stone Gray #949596 · Slate Gray #48494c · Midnight Black #18191a
+ *   Vermilion Red #ef0302 — the accent, and the only colour that is not grey.
+ * The dark theme's panels step UP from Midnight Black (#1e1f21, #232427, #2a2b2e). Dark is the default.
+ */
+:root {
+  --radius: 0rem;
+
+  --hr-obsidian: #18191a;
+  --hr-carbon: #48494c;
+  --hr-concrete: #949596;
+  --hr-stone: #c9cacb;
+  --hr-signal: #e3e3e3;
+  --hr-white: #fafafa;
+  --hr-rust: #ef0302;
+  --hr-rust-deep: #bf0202;
+  --hr-success: #2f9e5b;
+  --hr-alert: #bf0202;
+  --hr-coal: var(--hr-obsidian);
+  --hr-lumen: var(--hr-white);
+
+  /* Light: Mist Gray canvas, Cloud White panels. */
+  --hr-surface: #eeeeee;
+  --hr-surface-2: #e3e3e3;
+  --hr-panel: #fafafa;
+  --hr-highlight: rgba(0, 0, 0, 0.04);
+  --hr-ink-strong: #18191a;
+  --hr-ink-1: #2e2f31;
+  --hr-ink-2: #48494c;
+  --hr-ink-3: rgba(0, 0, 0, 0.64);
+  --hr-ink-4: rgba(0, 0, 0, 0.45);
+  --hr-line: rgba(0, 0, 0, 0.08);
+  --hr-line-strong: rgba(0, 0, 0, 0.16);
+  --hr-line-warm: rgba(0, 0, 0, 0.16);
+  --hr-border-cta: rgba(0, 0, 0, 0.22);
+  --hr-cta-solid-bg: #ef0302;
+  --hr-cta-solid-fg: #fafafa;
+  --hr-cta-fill: #bf0202;
+  --hr-nav-top: #eeeeeef5;
+
+  /* A grey ramp for charts: the accent stays for what the traveller should look at. */
+  --viz-1: #18191a;
+  --viz-2: #48494c;
+  --viz-3: #949596;
+  --viz-4: #c9cacb;
+  --viz-in: #ef0302;
+  --viz-out: #48494c;
+
+  --background: var(--hr-surface);
+  --foreground: var(--hr-ink-strong);
+  --card: var(--hr-panel);
+  --card-foreground: var(--hr-ink-strong);
+  --popover: var(--hr-panel);
+  --popover-foreground: var(--hr-ink-strong);
+  --primary: var(--hr-cta-solid-bg);
+  --primary-foreground: var(--hr-cta-solid-fg);
+  --secondary: var(--hr-signal);
+  --secondary-foreground: var(--hr-ink-strong);
+  --muted: var(--hr-surface-2);
+  --muted-foreground: var(--hr-ink-3);
+  --accent: var(--hr-highlight);
+  --accent-foreground: var(--hr-ink-strong);
+  --destructive: var(--hr-alert);
+  --border: var(--hr-line);
+  --input: var(--hr-border-cta);
+  --ring: var(--hr-rust);
+}
+
+.dark {
+  --hr-surface: #18191a;
+  --hr-surface-2: #1e1f21;
+  --hr-panel: #1e1f21;
+  --hr-highlight: rgba(255, 255, 255, 0.05);
+  --hr-ink-strong: #fafafa;
+  --hr-ink-1: rgba(255, 255, 255, 0.86);
+  --hr-ink-2: rgba(255, 255, 255, 0.74);
+  --hr-ink-3: rgba(255, 255, 255, 0.64);
+  --hr-ink-4: rgba(255, 255, 255, 0.4);
+  --hr-line: rgba(255, 255, 255, 0.08);
+  --hr-line-strong: rgba(255, 255, 255, 0.16);
+  --hr-line-warm: rgba(255, 255, 255, 0.16);
+  --hr-border-cta: rgba(255, 255, 255, 0.24);
+  --hr-cta-solid-bg: #ef0302;
+  --hr-cta-solid-fg: #fafafa;
+  --hr-cta-fill: #bf0202;
+  --hr-nav-top: #18191af2;
+  --viz-1: #fafafa;
+  --viz-2: #c9cacb;
+  --viz-3: #949596;
+  --viz-4: #48494c;
+  --viz-in: #ef0302;
+  --viz-out: #c9cacb;
+  --hr-signal: #2a2b2e;
+  --hr-stone: #48494c;
+  --hr-lumen: #1e1f21;
+  --hr-coal: #fafafa;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background font-body text-foreground;
+    letter-spacing: -0.01em;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+  }
+  h1 {
+    letter-spacing: -0.045em;
+    line-height: 1;
+  }
+  h2 {
+    letter-spacing: -0.025em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--hr-rust) 35%, transparent);
+  }
+}
+
+@layer components {
+  /* Sticky bars (header, filter rows): mostly opaque surface with a strong frosted blur. */
+  .hr-frost {
+    background: color-mix(in srgb, var(--hr-surface) 90%, transparent);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    backdrop-filter: blur(24px) saturate(1.5);
+  }
+  /* Mono uppercase label ("DO THE WORK", "BY INDUSTRY"…) */
+  .hr-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hr-ink-3);
+  }
+
+  /* Small solid square marker */
+  .hr-sq {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    background: var(--hr-rust);
+  }
+
+  /* Dot-grid canvas used behind illustrative frames */
+  .hr-dots {
+    background-image: radial-gradient(color-mix(in srgb, var(--hr-stone) 22%, transparent) 0.8px, transparent 0.8px);
+    background-size: 12px 12px;
+  }
+
+  /* Underline that draws in from the left on hover */
+  .hr-underline {
+    position: relative;
+  }
+  .hr-underline::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    height: 1px;
+    width: 100%;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 300ms var(--ease-hr);
+  }
+  .group:hover .hr-underline::after,
+  .hr-underline:hover::after,
+  .hr-underline[data-active="true"]::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* Siblings dim while one link is hovered */
+  .hr-hover-dim a,
+  .hr-hover-dim button {
+    transition:
+      opacity 0.35s var(--ease-hr),
+      color 0.35s var(--ease-hr);
+  }
+  .hr-hover-dim:has(a:hover, button:hover) a:not(:hover),
+  .hr-hover-dim:has(a:hover, button:hover) button:not(:hover) {
+    opacity: 0.4;
+  }
+
+  /* Chip whose rust border draws around it on hover */
+  .hr-chip-draw {
+    position: relative;
+  }
+  .hr-chip-draw::before,
+  .hr-chip-draw::after {
+    content: "";
+    box-sizing: border-box;
+    pointer-events: none;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+    transition:
+      width 0.12s linear,
+      height 0.12s linear,
+      opacity 0.12s linear;
+  }
+  .hr-chip-draw::before {
+    border-top: 1px solid var(--hr-rust);
+    border-right: 1px solid var(--hr-rust);
+    top: 0;
+    left: 0;
+  }
+  .hr-chip-draw::after {
+    border-bottom: 1px solid var(--hr-rust);
+    border-left: 1px solid var(--hr-rust);
+    bottom: 0;
+    right: 0;
+  }
+  .hr-chip-draw:hover::before {
+    opacity: 1;
+    width: 100%;
+    height: 100%;
+    transition:
+      opacity 10ms linear,
+      width 0.14s linear,
+      height 0.14s linear 0.14s;
+  }
+  .hr-chip-draw:hover::after {
+    opacity: 1;
+    width: 100%;
+    height: 100%;
+    transition:
+      opacity 10ms linear 0.28s,
+      width 0.14s linear 0.28s,
+      height 0.14s linear 0.42s;
+  }
+
+  /* Headline that fades from ink into the accent */
+  .hr-headline-gradient {
+    background-image: linear-gradient(90deg, var(--hr-ink-strong) 30%, var(--hr-concrete));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-block: 0.08em;
+    margin-block: -0.08em;
+  }
+  .dark .hr-headline-gradient {
+    background-image: linear-gradient(90deg, var(--hr-ink-strong) 30%, var(--hr-stone));
+  }
+
+  /* Rust inset bar on autofilled / focused hero inputs */
+  .hr-field:focus {
+    box-shadow: inset 2px 0 0 var(--hr-rust);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hr-underline::after,
+    .hr-chip-draw::before,
+    .hr-chip-draw::after,
+    .hr-hover-dim a,
+    .hr-hover-dim button {
+      transition: none;
+    }
+  }
+}
+
+@keyframes hr-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes hr-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/*
+ * Every scroll area inside the page: thin, transparent track, a faint thumb that only firms up while the area is
+ * hovered. Zero specificity (:where), so a component's own rule (.term-scroll, [scrollbar-width:none]) still wins.
+ * The page's own scrollbar (html) is left to the browser.
+ */
+:where(body *) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--hr-ink-3) 22%, transparent) transparent;
+}
+:where(body *):hover {
+  scrollbar-color: color-mix(in srgb, var(--hr-ink-3) 45%, transparent) transparent;
+}
+:where(body *)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+:where(body *)::-webkit-scrollbar-track,
+:where(body *)::-webkit-scrollbar-corner {
+  background: transparent;
+}
+:where(body *)::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--hr-ink-3) 22%, transparent);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+:where(body *):hover::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--hr-ink-3) 45%, transparent);
+}
+:where(body *)::-webkit-scrollbar-thumb:active {
+  background-color: color-mix(in srgb, var(--hr-rust) 70%, transparent);
+}
+
+/* ── Chat ─────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  /* Messages, cards and steps rise into place. */
+  .na-in {
+    animation: na-rise 520ms var(--ease-hr) both;
+  }
+
+  /* The square caret that follows the agent's text while it writes. */
+  .na-caret::after {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 4px;
+    vertical-align: 1px;
+    background: var(--hr-rust);
+    animation: hr-pulse 0.9s steps(2, jump-none) infinite;
+  }
+
+  /* A flight's route in a result card: a dashed line whose dashes travel while the card is hovered. */
+  .na-dash {
+    background-image: repeating-linear-gradient(90deg, var(--hr-line-strong) 0 4px, transparent 4px 7px);
+  }
+  .group:hover .na-dash {
+    background-image: repeating-linear-gradient(90deg, var(--hr-ink-3) 0 4px, transparent 4px 7px);
+    animation: na-dash-run 0.9s linear infinite;
+  }
+
+  /* A card the traveller pointed at from the text: a rust inset bar that fades. */
+  .na-flash {
+    animation: na-flash 1.8s var(--ease-hr-soft);
+  }
+
+  /* Flight line between two times: hairline with the stops as squares; while searching, a square crosses it. */
+  .na-route {
+    position: relative;
+    height: 1px;
+    background: var(--hr-line-strong);
+  }
+  .na-route[data-live="true"]::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 7px;
+    height: 7px;
+    background: var(--hr-rust);
+    animation: na-cross 1.6s var(--ease-hr) infinite;
+  }
+
+
+  @media (prefers-reduced-motion: reduce) {
+    .na-in,
+    .na-flash,
+    .na-caret::after,
+    .na-route[data-live="true"]::after,
+    .group:hover .na-dash {
+      animation: none;
+    }
+  }
+}
+
+@keyframes na-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes na-flash {
+  0%,
+  60% {
+    box-shadow: inset 3px 0 0 var(--hr-rust);
+    background: color-mix(in srgb, var(--hr-rust) 7%, var(--hr-panel));
+  }
+  100% {
+    box-shadow: inset 0 0 0 transparent;
+  }
+}
+
+@keyframes na-dash-run {
+  to {
+    background-position: 7px 0;
+  }
+}
+
+@keyframes na-cross {
+  from {
+    left: 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    left: calc(100% - 7px);
+    opacity: 0;
+  }
+}
+
+/* ── Line drawings (components/drawing/iso.tsx, from the Norba landing page) ── */
+
+/* Drawing paper: a faint 8 px grid with a firmer line every 40 px. */
+.na-paper {
+  background-color: var(--hr-panel);
+  background-image:
+    linear-gradient(var(--hr-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hr-line) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--hr-line) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--hr-line) 45%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+  background-position: -1px -1px;
+}
+
+/* A sheet inks in the first time it is on screen (.fx-play, kept once set); its wires and pings loop only while it
+   is on screen (.fx-live). A still drawing, fully drawn, under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .fx-drawing .fx-ink {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  .fx-drawing .fx-fade {
+    opacity: 0;
+  }
+  .fx-drawing.fx-play .fx-ink {
+    animation: fx-ink 1500ms cubic-bezier(0.45, 0, 0.2, 1) forwards;
+  }
+  .fx-drawing.fx-play .fx-fade {
+    animation: fx-fade 700ms ease-out forwards;
+  }
+  .fx-drawing.fx-play .fx-belt {
+    animation: fx-fade 700ms ease-out forwards, fx-wire 1400ms linear infinite reverse;
+  }
+  .fx-drawing.fx-live .fx-wire {
+    animation: fx-wire 900ms linear infinite;
+  }
+  .fx-drawing.fx-live .fx-ping {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: fx-ping 2400ms ease-out infinite;
+  }
+  .fx-drawing.fx-play:not(.fx-live) .fx-ink,
+  .fx-drawing.fx-play:not(.fx-live) .fx-fade,
+  .fx-drawing.fx-play:not(.fx-live) .fx-belt {
+    animation-play-state: paused;
+  }
+}
+@keyframes fx-ink {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes fx-fade {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fx-wire {
+  to {
+    stroke-dashoffset: -7;
+  }
+}
+@keyframes fx-ping {
+  from {
+    transform: scale(0.45);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}

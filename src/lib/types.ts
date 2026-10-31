@@ -1,0 +1,297 @@
+/*
+ * Shapes shared by the server and the browser: the slice of the Norba API contract this app reads
+ * (https://norba.io/docs, snake_case as on the wire) and the events the agent streams to the chat.
+ */
+
+export type CabinClass = "economy" | "premium_economy" | "business" | "first";
+
+export type Segment = {
+  segment_id?: string;
+  origin: string;
+  destination: string;
+  /** RFC 3339 in the origin airport's own offset: the clock part is the departure board's time. */
+  departure_utc: string;
+  arrival_utc: string;
+  flight_number?: string;
+  marketing_carrier?: string;
+  operating_carrier?: string;
+  aircraft?: string;
+  departure_terminal?: string;
+  arrival_terminal?: string;
+  duration_minutes?: number;
+  cabin_class?: CabinClass;
+  booking_class?: string;
+};
+
+export type Slice = {
+  id?: string;
+  origin: string;
+  destination: string;
+  departure_utc: string;
+  arrival_utc: string;
+  duration_minutes: number;
+  stops: number;
+  segments: Segment[];
+};
+
+export type FareBenefit = {
+  type: string;
+  included: boolean;
+  description?: string;
+  value?: string;
+};
+
+export type FareFamily = { id?: string; name?: string; description?: string; benefits?: FareBenefit[] };
+
+export type FareRules = {
+  refundable?: boolean | null;
+  changeable?: boolean | null;
+  refund_penalty_amount?: number;
+  refund_penalty_currency?: string;
+  change_penalty_amount?: number;
+  change_penalty_currency?: string;
+};
+
+export type Ancillary = {
+  type: string;
+  name?: string;
+  included_in_fare?: boolean;
+  weight_kg?: number | null;
+};
+
+export type PassengerPricing = { type: "ADT" | "CHD" | "INF"; count: number; base_fare?: number; taxes?: number; total?: number };
+
+export type Transfer = {
+  airport: string;
+  layover_minutes: number;
+  overnight?: boolean;
+  from_airline?: string;
+  to_airline?: string;
+};
+
+export type Offer = {
+  offer_id: string;
+  airline: string;
+  currency: string;
+  total_amount: number;
+  base_fare?: number;
+  taxes_fees?: number;
+  service_fee?: number;
+  expires_at?: string;
+  slices: Slice[];
+  passengers?: PassengerPricing[];
+  ancillaries_included?: Ancillary[];
+  baggage_included?: boolean;
+  fare_family?: FareFamily;
+  fare_rules?: FareRules;
+  cabin_class?: CabinClass;
+  self_transfer?: boolean;
+  transfers?: Transfer[];
+};
+
+export type PricedOffer = Offer & { price_guaranteed_until?: string };
+
+export type SearchLeg = { origin: string; destination: string; departure_date: string };
+
+export type SearchRequest = {
+  origin?: string;
+  destination?: string;
+  departure_date?: string;
+  return_date?: string;
+  adults: number;
+  children?: number;
+  infants?: number;
+  cabin_class?: CabinClass;
+  currency?: string;
+  max_stops?: number;
+  legs?: SearchLeg[];
+};
+
+export type SearchMeta = { total?: number; airlines?: string[]; min_price?: number };
+
+export type Airport = {
+  iata_code: string;
+  name: string;
+  city?: string;
+  country?: string;
+  metro_code?: string;
+  airport_type?: string;
+  timezone?: string;
+  page_rank?: number;
+};
+
+export type CalendarDay = { date: string; amount: number };
+
+export type NetworkAirline = { airline: string; name: string; carriers: string[] };
+
+export type Money = { amount: number; currency: string };
+
+export type Seat = {
+  seat_id?: string;
+  row: number;
+  column: string;
+  cabin?: string;
+  available: boolean;
+  price?: Money;
+  features?: string[];
+  segment_id: string;
+  passenger_id?: string;
+};
+
+export type SeatMap = { flight_id?: string; airline?: string; aircraft?: string; rows?: number; seats: Seat[] };
+
+export type Service = {
+  service_id: string;
+  type: string;
+  name: string;
+  description?: string;
+  price?: Money;
+  segment_refs?: string[];
+  pax_refs?: string[];
+};
+
+export type OfferQuote = {
+  currency: string;
+  base_fare?: number;
+  taxes_fees?: number;
+  fare_total: number;
+  extras: number;
+  service_fee: number;
+  total: number;
+};
+
+export type PaxType = "ADT" | "CHD" | "INF";
+
+export type Passenger = {
+  id: string;
+  type: PaxType;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  gender: "M" | "F";
+  document?: { type: "P" | "I"; number: string; issuing_country: string; nationality: string; expiry_date: string };
+};
+
+export type Contact = { email: string; phone: string };
+
+export type Ticket = { ticket_number?: string; passenger_id?: string; status?: string; type?: string };
+
+export type Order = {
+  order_id: string;
+  airline: string;
+  pnr?: string;
+  status: string;
+  environment?: "sandbox" | "production";
+  currency?: string;
+  total_amount?: number;
+  expires_at?: string;
+  passengers?: Passenger[];
+  slices?: Slice[];
+  tickets?: Ticket[];
+  warnings?: string[];
+};
+
+// ── The trip: twelve steps from the first sentence to the e-tickets ──────────
+
+export const STEPS = ["request", "airports", "search", "choose", "price", "seats", "extras", "travellers", "review", "payment", "booking", "tickets"] as const;
+
+export type StepId = (typeof STEPS)[number];
+
+export type StepStatus = "pending" | "running" | "waiting" | "done" | "failed" | "skipped";
+
+export type StepState = { status: StepStatus; summary?: string; error?: string; startedAt?: number; endedAt?: number };
+
+export type TripView = {
+  steps: Record<StepId, StepState>;
+  /** The step the trip is on: running, waiting for the traveller, or the next one to start. */
+  current?: StepId;
+  /** One line on what is happening right now. */
+  now: string;
+  pnr?: string;
+};
+
+/** A traveller as the forms know them before names are given: their id and type. */
+export type PaxSlot = { id: string; type: PaxType; label: string };
+
+// ── What the chat renders ─────────────────────────────────────────────────────
+
+/** The labels the agent pins on offers so the traveller sees why one stands out. */
+export type OfferTag = "cheapest" | "fastest" | "best";
+
+export type OffersBlock = {
+  kind: "offers";
+  id: string;
+  title: string;
+  request: SearchRequest;
+  offers: Offer[];
+  /** Short handle per offer_id (o1, o2…) — what the agent and the traveller call an offer by. */
+  refs: Record<string, string>;
+  tags: Record<string, OfferTag[]>;
+  airlines: string[];
+  streaming: boolean;
+  /** Set when this block is a filtered view of an earlier search: what was applied. */
+  filter?: string;
+};
+
+export type CalendarBlock = {
+  kind: "calendar";
+  id: string;
+  origin: string;
+  destination: string;
+  currency: string;
+  days: CalendarDay[];
+};
+
+export type PricedBlock = { kind: "priced"; id: string; ref: string; offer: PricedOffer; previousAmount?: number };
+
+export type RepliesBlock = { kind: "replies"; id: string; options: string[] };
+
+export type SeatsBlock = { kind: "seats"; id: string; maps: { segment: Segment; map: SeatMap }[]; pax: PaxSlot[]; currency: string };
+
+export type ExtrasBlock = { kind: "extras"; id: string; services: Service[]; pax: PaxSlot[]; segments: Segment[] };
+
+export type TravellersBlock = { kind: "travellers"; id: string; pax: PaxSlot[]; international: boolean; prefill?: { passengers: Passenger[]; contact?: Contact } };
+
+export type ReviewBlock = { kind: "review"; id: string; quote: OfferQuote; offer: PricedOffer; lines: { label: string; amount: number }[]; travellers: string[] };
+
+export type PaymentBlock = { kind: "payment"; id: string; amount: number; currency: string; environment: "sandbox" | "production" | "mock"; holdUntil?: string };
+
+export type BookingBlock = { kind: "booking"; id: string; order: Order; outcomeUnknown?: boolean };
+
+export type Block = OffersBlock | CalendarBlock | PricedBlock | RepliesBlock | SeatsBlock | ExtrasBlock | TravellersBlock | ReviewBlock | PaymentBlock | BookingBlock;
+
+/** What a form in the chat sends with its message; the details stay on the server, the model sees a summary. */
+export type FormSubmission =
+  | { kind: "seats"; skip?: boolean; seats?: { segment_id: string; row: number; column: string; passenger_id: string }[] }
+  | { kind: "extras"; skip?: boolean; extras?: { service_id: string; passenger_id?: string }[] }
+  | { kind: "travellers"; passengers: Passenger[]; contact: Contact }
+  | { kind: "payment"; card: { number: string; holder: string; expiry_month: number; expiry_year: number; cvv?: string } };
+
+export type ToolStatus = "running" | "done" | "error";
+
+export type ToolStep = { id: string; name: string; label: string; status: ToolStatus; detail?: string };
+
+export type Brain = { mode: "meta" | "offline"; model: string };
+
+/** One line of the NDJSON stream POST /api/chat answers with. */
+export type AgentEvent =
+  | { type: "start"; conversationId: string; brain: Brain }
+  | { type: "text"; delta: string }
+  | { type: "tool"; step: ToolStep }
+  | { type: "block"; block: Block }
+  | { type: "offers_append"; blockId: string; offers: Offer[]; airlines: string[] }
+  | { type: "offers_final"; block: OffersBlock }
+  | { type: "trip"; trip: TripView }
+  /** Airport and city names by IATA code, for every code the chat shows. */
+  | { type: "places"; places: Record<string, string> }
+  | { type: "error"; message: string }
+  | { type: "done" };
+
+export type ChatPart = { kind: "text"; text: string } | { kind: "tool"; step: ToolStep } | { kind: "block"; block: Block };
+
+export type ChatMessage = { id: string; role: "user" | "assistant"; parts: ChatPart[]; at: number; failed?: string; form?: FormSubmission["kind"] };
+
+export type AppStatus = {
+  brain: Brain;
+  norba: { mode: "live" | "mock"; environment: "sandbox" | "production" | "mock"; baseUrl: string };
+};

@@ -54,38 +54,43 @@ function SliceRow({ s, label }: { s: Slice; label?: string }) {
   const shift = dayShift(s.departure_utc, s.arrival_utc);
   const via = s.segments.slice(0, -1).map((g) => g.destination);
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 sm:grid-cols-[minmax(0,4.5rem)_auto_minmax(0,1fr)_auto] sm:gap-x-3">
+    // Departure and arrival take what they need and give way when room runs short (their names end in "…"); the
+    // flight line between them always keeps room of its own. Nothing in the row can run into the price column.
+    <div className="grid grid-cols-[minmax(0,max-content)_minmax(6.5rem,1fr)_minmax(0,max-content)] items-center gap-x-2.5 sm:grid-cols-[minmax(0,5.75rem)_minmax(0,max-content)_minmax(8.5rem,1fr)_minmax(0,max-content)] sm:gap-x-3">
       <span className="hidden truncate font-mono text-[10px] uppercase tracking-[0.04em] text-hr-ink-3 sm:block" title={label}>
         {label ? `${label} · ` : ""}
         {dateLabel(dayPart(s.departure_utc)).replace(/^\w+ /, "")}
       </span>
-      <p className="whitespace-nowrap text-[15px] leading-none tabular-nums text-hr-ink-strong">
-        {clock(s.departure_utc)} <Place code={s.origin} className="text-[10px] text-hr-ink-3" nameClassName="text-[11px] max-sm:hidden" />
+      <p className="flex min-w-0 items-baseline gap-1 text-[15px] leading-none tabular-nums text-hr-ink-strong">
+        <span className="shrink-0">{clock(s.departure_utc)}</span>
+        <Place code={s.origin} className="text-[10px] text-hr-ink-3" nameClassName="max-w-[9.5rem] text-[11px] max-sm:hidden" />
       </p>
       <div className="flex min-w-14 items-center gap-1.5" aria-label={`${duration(s.duration_minutes)}, ${s.stops ? `${s.stops} stop via ${via.join(", ")}` : "direct"}`}>
         <span aria-hidden="true" className="size-[5px] shrink-0 border border-hr-ink-3" />
         <span aria-hidden="true" className="na-dash h-px min-w-2 flex-1" />
         {/* The stop's name gives way first: it ends in an ellipsis rather than run into the arrival. */}
-        <span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap font-mono text-[10px] leading-none tabular-nums text-hr-ink-2">
-          {duration(s.duration_minutes)}
+        <span className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap font-mono text-[10px] leading-none tabular-nums text-hr-ink-2">
+          <span className="shrink-0">{duration(s.duration_minutes)}</span>
           {s.stops ? (
             via.map((v) => (
               <span key={v} className="inline-flex min-w-0 items-center gap-1">
                 <span aria-hidden="true" className="size-[5px] shrink-0 rotate-45 bg-hr-ink-strong" />
-                <Place code={v} className="min-w-0 truncate max-sm:hidden" nameClassName="text-[10.5px] max-lg:hidden" />
+                <Place code={v} className="max-sm:hidden" nameClassName="max-w-[9rem] text-[10.5px] max-lg:hidden" />
               </span>
             ))
           ) : (
-            <span className="text-hr-success">direct</span>
+            <span className="shrink-0 text-hr-success">direct</span>
           )}
         </span>
         <span aria-hidden="true" className="na-dash h-px min-w-2 flex-1" />
         <PlaneGlyph />
       </div>
-      <p className="whitespace-nowrap text-right text-[15px] leading-none tabular-nums text-hr-ink-strong">
-        {clock(s.arrival_utc)}
-        {shift > 0 && <sup className="ml-0.5 font-mono text-[9px] text-hr-rust">+{shift}</sup>}{" "}
-        <Place code={s.destination} className="text-[10px] text-hr-ink-3" nameClassName="text-[11px] max-sm:hidden" />
+      <p className="flex min-w-0 items-baseline justify-end gap-1 text-right text-[15px] leading-none tabular-nums text-hr-ink-strong">
+        <span className="shrink-0">
+          {clock(s.arrival_utc)}
+          {shift > 0 && <sup className="ml-0.5 font-mono text-[9px] text-hr-rust">+{shift}</sup>}
+        </span>
+        <Place code={s.destination} className="text-[10px] text-hr-ink-3" nameClassName="max-w-[9.5rem] text-[11px] max-sm:hidden" />
       </p>
     </div>
   );

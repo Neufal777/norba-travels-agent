@@ -12,9 +12,16 @@ type Ctx = { session: { places: Map<string, string> }; emit: (e: AgentEvent) => 
 export function shortName(a: Airport) {
   const city = a.city?.trim();
   if (a.airport_type === "metropolitan_area") return city || a.name.replace(/\s*\(all airports\)/i, "");
-  const name = a.name.replace(/\b(International\s+)?Airport\b/gi, "").replace(/\s{2,}/g, " ").replace(/[\s,–-]+$/, "").trim();
+  let name = a.name.replace(/\b(International\s+)?Airport\b/gi, "").replace(/\s{2,}/g, " ").replace(/[\s,–-]+$/, "").trim();
   if (!a.metro_code) return city || name;
-  return city && !name.toLowerCase().includes(city.toLowerCase()) ? `${city} ${name}` : name;
+  if (!city) return name;
+  // Official names carry a lot before and after the city: "Adolfo Suárez Madrid-Barajas" reads as "Madrid-Barajas",
+  // "Spata-Artemida Athens Eleftherios Venizelos" as "Athens Eleftherios Venizelos", "Santorini Island Santorini" as
+  // "Santorini Island".
+  const at = name.toLowerCase().indexOf(city.toLowerCase());
+  if (at > 0) name = name.slice(at);
+  if (name.length > city.length && name.toLowerCase().endsWith(` ${city.toLowerCase()}`) && name.toLowerCase().startsWith(city.toLowerCase())) name = name.slice(0, -city.length - 1).trim();
+  return at < 0 ? `${city} ${name}` : name;
 }
 
 function publish(ctx: Ctx) {

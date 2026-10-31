@@ -165,7 +165,7 @@ if it does not take one. Airline schedule changes arrive through `/api/webhooks/
 ## Deploy (Render)
 
 `Dockerfile` builds the Next.js standalone server (Node 22, non-root, port from `PORT`); `render.yaml` is a Blueprint
-for one Docker web service in Frankfurt with `/api/status` as health check and manual deploys. Secrets are asked for
+for one Docker web service in Oregon (the Meta Model API refuses calls from an EU data centre) with `/api/status` as health check and manual deploys. Secrets are asked for
 when the Blueprint is applied and never live in the repository or the image. Conversations, checkout links and limits
 live in memory, so the service runs as a single instance.
 

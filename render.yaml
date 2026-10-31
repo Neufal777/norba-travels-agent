@@ -5,7 +5,9 @@ services:
     name: norba-travels-agent
     runtime: docker
     dockerfilePath: ./Dockerfile
-    region: frankfurt
+    # In the United States: the Meta Model API answers "model not found" to calls from an EU data centre
+    # (Frankfurt), the same key and model that work elsewhere.
+    region: oregon
     # Conversations, checkout links and limits live in memory: one instance, no autoscaling.
     numInstances: 1
     healthCheckPath: /api/status

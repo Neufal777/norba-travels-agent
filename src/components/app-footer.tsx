@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { NorbaLogo } from "./brand";
-import { Sq } from "./status";
-import { useStatus } from "./use-status";
 
 type FooterLink = { label: string; href: string };
 
@@ -16,11 +14,9 @@ const LINKS: FooterLink[] = [
   { label: "MCP server", href: "/docs#mcp" },
 ];
 
-const ENV_LABEL = { sandbox: "Sandbox", production: "Production", mock: "Mock data" } as const;
 
 /** The site's footer: one fixed strip under the chat, so the page never grows past the screen. */
 export function AppFooter() {
-  const status = useStatus();
   return (
     <footer className="shrink-0 border-t border-hr-line bg-hr-surface-2">
       <div className="mx-auto flex max-w-[1120px] flex-wrap items-center gap-x-6 gap-y-2 px-5 py-2.5 md:px-10">
@@ -42,12 +38,6 @@ export function AppFooter() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-x-4">
-          {status && (
-            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-4">
-              <Sq className={status.norba.environment === "mock" ? "bg-hr-concrete" : "bg-hr-success"} />
-              Norba · {ENV_LABEL[status.norba.environment]}
-            </span>
-          )}
           <span className="hidden text-[11px] text-hr-ink-4 sm:inline">© {new Date().getFullYear()} Norba</span>
         </div>
       </div>

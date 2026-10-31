@@ -9,7 +9,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Sq } from "./status";
 import { useStatus } from "./use-status";
 
-const ENV_LABEL = { sandbox: "Sandbox", production: "Production", mock: "Mock data" } as const;
 
 /** The hackathon this was built for, its hosts' marks first — the first thing on the page. */
 function HackathonStrip() {
@@ -59,17 +58,6 @@ export function AppHeader({ onNewChat }: { onNewChat?: () => void }) {
                 </TooltipTrigger>
                 <TooltipContent className="max-w-64">
                   {meta ? "Meta Model API answers: it reads your request and drives the searches." : "No MODEL_API_KEY yet: a rule-based planner drives the same tools. Set the key to switch to Muse Spark."}
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 md:inline-flex">
-                    <Sq className={status.norba.environment === "production" ? "bg-hr-success" : status.norba.environment === "sandbox" ? "bg-hr-rust" : "bg-hr-concrete"} />
-                    Norba · {ENV_LABEL[status.norba.environment]}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-64">
-                  {status.norba.mode === "mock" ? "No NORBA_API_KEY: flights are generated locally." : `Searches reach the airlines' ${status.norba.environment} systems through ${status.norba.baseUrl}.`}
                 </TooltipContent>
               </Tooltip>
             </>

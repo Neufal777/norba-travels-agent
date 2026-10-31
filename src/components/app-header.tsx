@@ -78,6 +78,9 @@ export function AppHeader({ onNewChat }: { onNewChat?: () => void }) {
           <Link href="/agency" className="hidden cursor-pointer font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 no-underline transition-colors hover:text-hr-ink-strong sm:inline">
             Agency desk
           </Link>
+          <Link href="/docs" className="hidden cursor-pointer font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 no-underline transition-colors hover:text-hr-ink-strong sm:inline">
+            Docs
+          </Link>
 
           {onNewChat && (
             <Button variant="outline" size="sm" onClick={onNewChat} className="cursor-pointer">

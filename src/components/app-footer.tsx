@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { NorbaLogo } from "./brand";
 import { Sq } from "./status";
@@ -7,14 +8,12 @@ import { useStatus } from "./use-status";
 
 type FooterLink = { label: string; href: string };
 
-/** What the footer links to, inline: Norba first, then what the agent is built with and for. */
+/** The agent's own pages: the traveller's chat, the agency desk, its docs and the MCP server for other assistants. */
 const LINKS: FooterLink[] = [
-  { label: "Airlines", href: "https://norba.io/docs/airlines" },
-  { label: "API docs", href: "https://norba.io/docs" },
-  { label: "Changelog", href: "https://norba.io/docs/changelog" },
-  { label: "Norba Travel", href: "https://booking.norba.io" },
-  { label: "Meta Model API", href: "https://dev.meta.ai/docs/models" },
-  { label: "Muse Spark", href: "https://dev.meta.ai/resources/blog/build-with-muse-spark/" },
+  { label: "Agent", href: "/" },
+  { label: "Agency desk", href: "/agency" },
+  { label: "Docs", href: "/docs" },
+  { label: "MCP server", href: "/docs#mcp" },
 ];
 
 const ENV_LABEL = { sandbox: "Sandbox", production: "Production", mock: "Mock data" } as const;
@@ -37,9 +36,9 @@ export function AppFooter() {
         </a>
         <nav aria-label="Links" className="hidden items-center gap-x-4 md:flex">
           {LINKS.map((l) => (
-            <a key={l.label} href={l.href} target="_blank" rel="noreferrer" className="cursor-pointer text-[11.5px] text-hr-ink-3 no-underline transition-colors hover:text-hr-ink-strong">
+            <Link key={l.label} href={l.href} className="cursor-pointer text-[11.5px] text-hr-ink-3 no-underline transition-colors hover:text-hr-ink-strong">
               {l.label}
-            </a>
+            </Link>
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-x-4">

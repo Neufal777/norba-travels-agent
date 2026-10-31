@@ -48,7 +48,8 @@ function titleOf(r: SearchRequest, session: Session) {
 }
 
 /** What the model reads back from a set of offers: counts, the three highlights and the top itineraries. */
-function digest(offers: Offer[], refs: Record<string, string>) {
+/** `forChat`: the traveller also sees every offer as a card; another assistant only gets this text. */
+export function digest(offers: Offer[], refs: Record<string, string>, forChat = true) {
   if (!offers.length) return "No offers.";
   const its = groupItineraries(offers);
   const tags = tagOffers(offers);
@@ -61,7 +62,7 @@ function digest(offers: Offer[], refs: Record<string, string>) {
   const airlines = [...new Set(offers.map((o) => o.airline))];
   return [
     `${offers.length} offers, ${its.length} itineraries, airlines: ${airlines.join(", ")}. Prices are totals for all passengers, the agency fee included.`,
-    `Best-ranked first (showing ${shown.length} of ${its.length}; the traveller sees all of them as cards):`,
+    `Best-ranked first (showing ${shown.length} of ${its.length}${forChat ? "; the traveller sees all of them as cards" : ""}):`,
     ...shown.map((it) => `- ${describeItinerary(it, refs, tags[it.cheapest.offer_id])}`),
   ].join("\n");
 }

@@ -20,6 +20,8 @@ export const config = {
   voice: { id: process.env.VOICE_MODEL_ID?.trim() || "muse-voice-transcribe-1.0" },
   /** Bearer token the MCP endpoint asks for; empty leaves it open (local development). */
   mcp: { token: process.env.MCP_TOKEN?.trim() ?? "" },
+  /** Where this app is reached from outside, for the checkout links it hands out; empty uses the request's host. */
+  publicUrl: (process.env.PUBLIC_URL?.trim() ?? "").replace(/\/$/, ""),
   norba: {
     apiKey: process.env.NORBA_API_KEY?.trim() ?? "",
     baseUrl: (process.env.NORBA_API_URL?.trim() || "https://api.norba.io").replace(/\/$/, ""),

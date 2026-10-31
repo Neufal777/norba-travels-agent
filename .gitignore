@@ -26,3 +26,6 @@ npm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# The demo video script stays local
+/demo.md

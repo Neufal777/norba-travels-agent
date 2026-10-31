@@ -1,7 +1,8 @@
 import "server-only";
 
 import { money } from "@/lib/format";
-import type { FormSubmission, Passenger, PaxType } from "@/lib/types";
+import type { Contact, FormSubmission, Offer, Passenger, PaxSlot, PaxType } from "@/lib/types";
+import type { CardData } from "../norba/port";
 import { step } from "./trip";
 import type { ToolContext } from "./tools";
 
@@ -100,34 +101,9 @@ export function applyForm(ctx: ToolContext, form: FormSubmission): string {
   }
 
   if (form.kind === "travellers") {
-    const depart = t.priced.slices[0].departure_utc;
-    const back = t.priced.slices.at(-1)!.arrival_utc;
-    if (form.passengers.length !== t.pax.length) throw new FormError(`Details are needed for ${t.pax.length} travellers.`);
-    const passengers: Passenger[] = form.passengers.map((p, i) => {
-      const slot = t.pax[i];
-      const first = p.first_name?.trim();
-      const last = p.last_name?.trim();
-      if (!NAME.test(first ?? "") || !NAME.test(last ?? "")) throw new FormError(`${slot.label}: name and surname as on the passport, letters only.`);
-      if (!DATE.test(p.date_of_birth ?? "") || p.date_of_birth > depart.slice(0, 10)) throw new FormError(`${slot.label}: date of birth as YYYY-MM-DD.`);
-      const age = ageOn(p.date_of_birth, depart);
-      const [min, max, what] = AGE[slot.type];
-      if (age < min || age > max) throw new FormError(`${slot.label} must be ${what} on the day of travel.`);
-      if (p.gender !== "M" && p.gender !== "F") throw new FormError(`${slot.label}: choose a gender as on the passport.`);
-      let document: Passenger["document"];
-      if (p.document?.number?.trim()) {
-        const d = p.document;
-        if (!/^[A-Z0-9]{5,20}$/i.test(d.number.trim())) throw new FormError(`${slot.label}: the document number looks wrong.`);
-        if (!/^[A-Z]{2}$/.test(d.issuing_country ?? "") || !/^[A-Z]{2}$/.test(d.nationality ?? "")) throw new FormError(`${slot.label}: country codes as two letters (ES, GB…).`);
-        if (!DATE.test(d.expiry_date ?? "") || d.expiry_date <= back.slice(0, 10)) throw new FormError(`${slot.label}: the document must be valid after the trip.`);
-        document = { type: d.type === "I" ? "I" : "P", number: d.number.trim().toUpperCase(), issuing_country: d.issuing_country, nationality: d.nationality, expiry_date: d.expiry_date };
-      }
-      return { id: slot.id, type: slot.type, first_name: first!, last_name: last!, date_of_birth: p.date_of_birth, gender: p.gender, document };
-    });
-    const email = form.contact?.email?.trim() ?? "";
-    const phone = form.contact?.phone?.replace(/\s+/g, "") ?? "";
-    if (!EMAIL.test(email)) throw new FormError("A contact email, please.");
-    if (!PHONE.test(phone)) throw new FormError("A contact phone with country code, e.g. +34 600 000 000.");
-    t.travellers = { passengers, contact: { email, phone } };
+    const passengers = validPassengers(form.passengers, t.pax, t.priced);
+    const contact = validContact(form.contact);
+    t.travellers = { passengers, contact };
     // Names do not move the price, but a total already approved is approved again.
     if (t.view.steps.review.status === "done") step(ctx, "review", "pending");
     if (t.view.steps.payment.status !== "pending") step(ctx, "payment", "pending");
@@ -137,26 +113,60 @@ export function applyForm(ctx: ToolContext, form: FormSubmission): string {
 
   if (form.kind === "payment") {
     if (!t.quote || t.view.steps.review.status !== "done") throw new FormError("Review the total before paying.");
-    const c = form.card;
-    const number = (c?.number ?? "").replace(/\D/g, "");
-    if (number.length < 12 || number.length > 19 || !luhn(number)) throw new FormError("That card number is not valid.");
-    if (!c.holder?.trim() || c.holder.trim().length > 64) throw new FormError("The name on the card, please.");
-    const now = new Date();
-    const y = c.expiry_year < 100 ? 2000 + c.expiry_year : c.expiry_year;
-    if (!(c.expiry_month >= 1 && c.expiry_month <= 12) || y < now.getFullYear() || (y === now.getFullYear() && c.expiry_month < now.getMonth() + 1) || y > now.getFullYear() + 20) throw new FormError("The card has expired or the date is wrong.");
-    if (c.cvv && !/^\d{3,4}$/.test(c.cvv)) throw new FormError("The security code has 3 or 4 digits.");
-    const brand = cardBrand(number);
-    t.payment = {
-      card: { number, holder: c.holder.trim(), expiry_month: c.expiry_month, expiry_year: y, cvv: c.cvv || undefined, brand: brand === "CARD" ? undefined : brand },
-      amount: t.quote.total,
-      currency: t.quote.currency,
-      last4: number.slice(-4),
-      brand,
-      at: Date.now(),
-    };
-    step(ctx, "payment", "done", `${brand} •••• ${number.slice(-4)} · ${money(t.quote.total, t.quote.currency, { cents: true })}`);
-    return `[Payment form] The traveller pressed Pay: ${brand} ending ${number.slice(-4)} for ${money(t.quote.total, t.quote.currency, { cents: true })}.`;
+    const { card, brand } = validCard(form.card);
+    t.payment = { card, amount: t.quote.total, currency: t.quote.currency, last4: card.number.slice(-4), brand, at: Date.now() };
+    step(ctx, "payment", "done", `${brand} •••• ${card.number.slice(-4)} · ${money(t.quote.total, t.quote.currency, { cents: true })}`);
+    return `[Payment form] The traveller pressed Pay: ${brand} ending ${card.number.slice(-4)} for ${money(t.quote.total, t.quote.currency, { cents: true })}.`;
   }
 
   throw new FormError("Unknown form.");
+}
+
+/** One entry per traveller slot, as on the passport, old enough or young enough for the slot on the day of travel. */
+export function validPassengers(input: Passenger[] | undefined, slots: PaxSlot[], offer: Offer): Passenger[] {
+  const depart = offer.slices[0].departure_utc;
+  const back = offer.slices.at(-1)!.arrival_utc;
+  if (!Array.isArray(input) || input.length !== slots.length) throw new FormError(`Details are needed for ${slots.length} traveller${slots.length > 1 ? "s" : ""}.`);
+  return input.map((p, i) => {
+    const slot = slots[i];
+    const first = p.first_name?.trim();
+    const last = p.last_name?.trim();
+    if (!NAME.test(first ?? "") || !NAME.test(last ?? "")) throw new FormError(`${slot.label}: name and surname as on the passport, letters only.`);
+    if (!DATE.test(p.date_of_birth ?? "") || p.date_of_birth > depart.slice(0, 10)) throw new FormError(`${slot.label}: date of birth as YYYY-MM-DD.`);
+    const age = ageOn(p.date_of_birth, depart);
+    const [min, max, what] = AGE[slot.type];
+    if (age < min || age > max) throw new FormError(`${slot.label} must be ${what} on the day of travel.`);
+    if (p.gender !== "M" && p.gender !== "F") throw new FormError(`${slot.label}: choose a gender as on the passport.`);
+    let document: Passenger["document"];
+    if (p.document?.number?.trim()) {
+      const d = p.document;
+      if (!/^[A-Z0-9]{5,20}$/i.test(d.number.trim())) throw new FormError(`${slot.label}: the document number looks wrong.`);
+      if (!/^[A-Z]{2}$/.test(d.issuing_country ?? "") || !/^[A-Z]{2}$/.test(d.nationality ?? "")) throw new FormError(`${slot.label}: country codes as two letters (ES, GB…).`);
+      if (!DATE.test(d.expiry_date ?? "") || d.expiry_date <= back.slice(0, 10)) throw new FormError(`${slot.label}: the document must be valid after the trip.`);
+      document = { type: d.type === "I" ? "I" : "P", number: d.number.trim().toUpperCase(), issuing_country: d.issuing_country, nationality: d.nationality, expiry_date: d.expiry_date };
+    }
+    return { id: slot.id, type: slot.type, first_name: first!, last_name: last!, date_of_birth: p.date_of_birth, gender: p.gender, document };
+  });
+}
+
+export function validContact(c: Contact | undefined): Contact {
+  const email = c?.email?.trim() ?? "";
+  const phone = c?.phone?.replace(/\s+/g, "") ?? "";
+  if (!EMAIL.test(email)) throw new FormError("A contact email, please.");
+  if (!PHONE.test(phone)) throw new FormError("A contact phone with country code, e.g. +34 600 000 000.");
+  return { email, phone };
+}
+
+/** A card that can pay: a valid number, a name, a future expiry. Returned with its brand for the airline. */
+export function validCard(c: { number: string; holder: string; expiry_month: number; expiry_year: number; cvv?: string } | undefined): { card: CardData; brand: string } {
+  const number = (c?.number ?? "").replace(/\D/g, "");
+  if (number.length < 12 || number.length > 19 || !luhn(number)) throw new FormError("That card number is not valid.");
+  if (!c!.holder?.trim() || c!.holder.trim().length > 64) throw new FormError("The name on the card, please.");
+  const now = new Date();
+  const y = c!.expiry_year < 100 ? 2000 + c!.expiry_year : c!.expiry_year;
+  if (!(c!.expiry_month >= 1 && c!.expiry_month <= 12) || y < now.getFullYear() || (y === now.getFullYear() && c!.expiry_month < now.getMonth() + 1) || y > now.getFullYear() + 20)
+    throw new FormError("The card has expired or the date is wrong.");
+  if (c!.cvv && !/^\d{3,4}$/.test(c!.cvv)) throw new FormError("The security code has 3 or 4 digits.");
+  const brand = cardBrand(number);
+  return { card: { number, holder: c!.holder.trim(), expiry_month: c!.expiry_month, expiry_year: y, cvv: c!.cvv || undefined, brand: brand === "CARD" ? undefined : brand }, brand };
 }

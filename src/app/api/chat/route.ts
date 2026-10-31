@@ -2,6 +2,7 @@ import { FormError } from "@/server/agent/forms";
 import { brain, runAgent } from "@/server/agent/run";
 import { session } from "@/server/agent/sessions";
 import { ModelError } from "@/server/llm/meta";
+import { config } from "@/server/config";
 import { validAttachment } from "@/server/agent/vision";
 import type { AgentEvent, Attachment, FormSubmission } from "@/lib/types";
 
@@ -13,7 +14,15 @@ const MAX_ATTACHMENTS = 3;
 
 type Body = { conversationId?: string; message?: string; form?: FormSubmission; attachments?: Attachment[]; context?: { today?: string; timeZone?: string; locale?: string } };
 
-const FORMS = ["seats", "extras", "travellers", "payment", "change"];
+const FORMS = ["seats", "extras", "travellers", "payment", "change", "group_hold"];
+
+/** This app as seen from outside: PUBLIC_URL when set, otherwise the host the request came to. */
+function publicOrigin(req: Request) {
+  if (config.publicUrl) return config.publicUrl;
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "localhost:3200";
+  const proto = req.headers.get("x-forwarded-proto") ?? (/^(localhost|127\.)/.test(host) ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
 /** One chat turn: the agent's events as NDJSON (one JSON object per line), ending with `done` or `error`. */
 export async function POST(req: Request) {
@@ -48,7 +57,7 @@ export async function POST(req: Request) {
       };
       emit({ type: "start", conversationId: s.id, brain: brain() });
       try {
-        await runAgent({ session: s, text, context: body.context ?? {}, emit, signal: req.signal, form: body.form, attachments });
+        await runAgent({ session: s, text, context: body.context ?? {}, emit, signal: req.signal, form: body.form, attachments, origin: publicOrigin(req) });
         emit({ type: "done" });
       } catch (e) {
         if (!req.signal.aborted) {

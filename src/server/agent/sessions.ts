@@ -1,6 +1,7 @@
 import "server-only";
 
-import type { Offer, OffersBlock, Order, SearchRequest } from "@/lib/types";
+import type { AgentEvent, Offer, OffersBlock, Order, SearchRequest } from "@/lib/types";
+import type { StoredGroup } from "./group";
 import type { ChatTurn } from "../llm/types";
 import type { StoredRebook } from "./servicing-tools";
 import { newTrip, type TripState } from "./trip";
@@ -33,6 +34,14 @@ export type Session = {
   rebooks: Map<string, StoredRebook>;
   /** The booked flight a board photo or an airline notice says is disrupted. */
   disruption?: { orderId: string; sliceIndex: number };
+  /** Group trips planned, by block id. */
+  groups: Map<string, StoredGroup>;
+  /**
+   * What happened while no message was being answered (a friend paid their link, an airline moved a flight): the
+   * chat polls for it. Numbered so a poll asks only for what it has not seen.
+   */
+  outbox: { seq: number; event: AgentEvent }[];
+  seq: number;
   touched: number;
   busy: boolean;
 };
@@ -58,9 +67,15 @@ export function session(id?: string): Session {
     found.touched = Date.now();
     return found;
   }
-  const s: Session = { id: id && /^[\w-]{8,64}$/.test(id) ? id : crypto.randomUUID(), turns: [], searches: [], offers: new Map(), nextRef: 1, draft: { adults: 1 }, trip: newTrip(), places: new Map(), orders: [], rebooks: new Map(), touched: Date.now(), busy: false };
+  const s: Session = { id: id && /^[\w-]{8,64}$/.test(id) ? id : crypto.randomUUID(), turns: [], searches: [], offers: new Map(), nextRef: 1, draft: { adults: 1 }, trip: newTrip(), places: new Map(), orders: [], rebooks: new Map(), groups: new Map(), outbox: [], seq: 0, touched: Date.now(), busy: false };
   sessions.set(s.id, s);
   return s;
+}
+
+/** Queues an event for the chat's next poll; the newest 200 are kept. */
+export function pushUpdate(s: Session, event: AgentEvent) {
+  s.outbox.push({ seq: ++s.seq, event });
+  if (s.outbox.length > 200) s.outbox.splice(0, s.outbox.length - 200);
 }
 
 /** A conversation that already exists, without creating one: for pages that only read it. */

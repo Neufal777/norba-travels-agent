@@ -312,6 +312,52 @@ export type RebookBlock = {
   switched?: string;
 };
 
+/** One flight a traveller's agent put forward for a group trip. */
+export type GroupOption = {
+  ref: string;
+  airline: string;
+  total: number;
+  currency: string;
+  fare?: string;
+  bag: boolean;
+  outbound: Slice;
+  inbound?: Slice;
+  reason?: string;
+};
+
+/** A traveller in a group trip, and what their own agent is doing for them. */
+export type GroupLane = {
+  id: string;
+  name: string;
+  origin: string;
+  preferences?: string;
+  status: "searching" | "choosing" | "ready" | "failed";
+  /** Their agent's picks, best first. */
+  shortlist: GroupOption[];
+  /** Other flights the coordinator may use to land everyone together, at other times of day. */
+  alternates?: GroupOption[];
+  choice?: GroupOption;
+  note?: string;
+  /** Once held: the checkout link they pay on, and the booking once they did. */
+  hold?: { url: string; total: number; currency: string; until?: string; paid?: boolean; pnr?: string; error?: string };
+};
+
+/** A trip for several people from several cities: one agent per traveller, a coordinator that fits them together. */
+export type GroupBlock = {
+  kind: "group";
+  id: string;
+  title: string;
+  destination: string;
+  departDate: string;
+  returnDate?: string;
+  windowMinutes: number;
+  budget?: number;
+  currency: string;
+  lanes: GroupLane[];
+  coordinator: { status: "waiting" | "thinking" | "done" | "failed"; model?: string; rationale?: string; spreadMinutes?: number; checked?: string };
+  holding?: boolean;
+};
+
 export type Block =
   | OffersBlock
   | CalendarBlock
@@ -324,7 +370,8 @@ export type Block =
   | PaymentBlock
   | BookingBlock
   | VisionBlock
-  | RebookBlock;
+  | RebookBlock
+  | GroupBlock;
 
 /** What a form in the chat sends with its message; the details stay on the server, the model sees a summary. */
 export type FormSubmission =
@@ -333,7 +380,9 @@ export type FormSubmission =
   | { kind: "travellers"; passengers: Passenger[]; contact: Contact }
   | { kind: "payment"; card: { number: string; holder: string; expiry_month: number; expiry_year: number; cvv?: string } }
   /** Pressing Switch on an alternative: the traveller's consent to change a booked flight. */
-  | { kind: "change"; blockId: string; offerId: string };
+  | { kind: "change"; blockId: string; offerId: string }
+  /** Pressing Hold on a group plan: price every chosen flight and give each traveller a checkout link. */
+  | { kind: "group_hold"; blockId: string };
 
 export type ToolStatus = "running" | "done" | "error";
 

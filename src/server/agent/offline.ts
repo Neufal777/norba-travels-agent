@@ -241,6 +241,7 @@ const L = {
     booked: (pnr: string) => `¡Reservado! Localizador **${pnr}**.`,
     bookedSandbox: "Reserva de pruebas: no se ha cobrado nada.",
     switched: "Cambiado. Tu reserva ya tiene el vuelo nuevo.",
+    held: "Plazas retenidas. Cada uno tiene su enlace para pagar el suyo.",
     needsVision: "Para leer archivos necesito Muse Spark: falta MODEL_API_KEY.",
     bookFailed: (why: string) => `La reserva no se ha completado: ${why}`,
     unknownOutcome: "La aerolínea no ha respondido y la tarjeta podría haberse cargado. **No vuelvas a pagar**: contacta con soporte.",
@@ -275,6 +276,7 @@ const L = {
     booked: (pnr: string) => `Booked! Reference **${pnr}**.`,
     bookedSandbox: "Sandbox booking: nothing was charged.",
     switched: "Done. Your booking has the new flight.",
+    held: "Seats held. Everyone has their own link to pay.",
     needsVision: "Reading files needs Muse Spark: MODEL_API_KEY is not set.",
     bookFailed: (why: string) => `The booking did not go through: ${why}`,
     unknownOutcome: "The airline did not answer and the card may have been charged. **Do not pay again**: contact support.",
@@ -385,6 +387,7 @@ export async function runOffline(turn: Turn) {
   const trip = session.trip;
 
   // A form answered in the chat moves the booking on.
+  if (turn.form?.kind === "group_hold") return say(ctx, turn.booking!.content.startsWith("ERROR") ? `${l.failed}${clean(turn.booking!.content)}` : l.held);
   if (turn.form?.kind === "change") {
     const b = turn.booking!;
     return say(ctx, b.content.startsWith("ERROR") ? `${l.failed}${clean(b.content)}` : l.switched);

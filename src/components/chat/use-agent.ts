@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { emptyTrip } from "@/lib/steps";
 import type { AgentEvent, Attachment, Block, Brain, ChatMessage, ChatPart, FormSubmission, TripView } from "@/lib/types";
 
@@ -61,6 +61,10 @@ export function useAgent() {
   const abort = useRef<AbortController | null>(null);
 
   const patch = (id: string, fn: (m: ChatMessage) => ChatMessage) => setMessages((all) => all.map((m) => (m.id === id ? fn(m) : m)));
+  /** A block from an earlier message (a rebooking switched, a friend's group seat paid) moves on, wherever it is. */
+  const replaceBlock = (block: Block) =>
+    setMessages((all) => all.map((m) => (m.parts.some((p) => p.kind === "block" && p.block.id === block.id) ? { ...m, parts: m.parts.map((p) => (p.kind === "block" && p.block.id === block.id ? { kind: "block", block } : p)) } : m)));
+  const seen = useRef(0);
 
   const send = useCallback(
     /** `form` sends a form's answer; `raw` is then the line the traveller sees, never the details themselves. */
@@ -99,8 +103,7 @@ export function useAgent() {
           } else if (e.type === "places") {
             setPlaces((known) => ({ ...known, ...e.places }));
           } else if (e.type === "patch") {
-            // A block from an earlier message (a rebooking that was switched, a group trip being paid) moves on.
-            setMessages((all) => all.map((m) => (m.parts.some((p) => p.kind === "block" && p.block.id === e.block.id) ? { ...m, parts: m.parts.map((p) => (p.kind === "block" && p.block.id === e.block.id ? { kind: "block", block: e.block } : p)) } : m)));
+            replaceBlock(e.block);
           } else if (e.type === "error") {
             patch(reply.id, (m) => ({ ...m, failed: e.message }));
           } else if (e.type !== "done") {
@@ -119,11 +122,30 @@ export function useAgent() {
     [busy],
   );
 
+  // Between messages the conversation can still move: a friend pays their link, an airline moves a flight.
+  useEffect(() => {
+    if (busy) return;
+    const id = setInterval(async () => {
+      if (!conversation.current || document.hidden) return;
+      try {
+        const r = await fetch(`/api/updates?c=${encodeURIComponent(conversation.current)}&after=${seen.current}`, { cache: "no-store" });
+        const j = (await r.json()) as { seq: number; events: AgentEvent[] };
+        seen.current = Math.max(seen.current, j.seq);
+        for (const e of j.events) {
+          if (e.type === "patch") replaceBlock(e.block);
+          else if (e.type === "trip") setTrip(e.trip);
+        }
+      } catch {}
+    }, 4000);
+    return () => clearInterval(id);
+  }, [busy]);
+
   const stop = useCallback(() => abort.current?.abort(), []);
 
   const reset = useCallback(() => {
     abort.current?.abort();
     conversation.current = undefined;
+    seen.current = 0;
     setMessages([]);
     setTrip(emptyTrip());
   }, []);

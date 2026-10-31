@@ -14,6 +14,7 @@ import { Replies } from "./replies-block";
 import { ReviewResult } from "./review-block";
 import { SeatsResult } from "./seats-block";
 import { TravellersResult } from "./travellers-block";
+import { GroupResult } from "./group-block";
 import { RebookResult } from "./rebook-block";
 import { RichText } from "./rich-text";
 import { VisionResult } from "./vision-block";
@@ -45,6 +46,8 @@ function BlockView({ block, live }: { block: Block; live: boolean }) {
       return <VisionResult block={block} />;
     case "rebook":
       return <RebookResult block={block} />;
+    case "group":
+      return <GroupResult block={block} />;
   }
 }
 

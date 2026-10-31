@@ -152,7 +152,8 @@ function generate(req: SearchRequest): Map<string, Offer[]> {
     if (!routings.length) continue;
     const offers: Offer[] = [];
     for (const via of routings.slice(0, 3)) {
-      const times = 1 + Math.floor(rand() * 2);
+      // Non-stops fly two or three times a day, as on a hub route; connections once or twice.
+      const times = via ? 1 + Math.floor(rand() * 2) : 2 + Math.floor(rand() * 2);
       for (let k = 0; k < times; k++) {
         const slices = legs.map((l) => {
           const os = pointsFor(l.origin);

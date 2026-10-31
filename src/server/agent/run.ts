@@ -27,6 +27,8 @@ export type RunInput = {
   signal?: AbortSignal;
   form?: FormSubmission;
   attachments?: Attachment[];
+  /** Where this app is reached from outside, for the checkout links a turn hands out. */
+  origin?: string;
 };
 
 /**
@@ -52,6 +54,11 @@ export async function runAgent(input: RunInput) {
     turn.formNote = "[Switch] The traveller pressed Switch on an alternative flight.";
     turn.resultLabel = "Change result";
     turn.booking = await callTool("change_flight", { blockId: input.form.blockId, offerId: input.form.offerId }, ctx);
+  } else if (input.form?.kind === "group_hold") {
+    // Pressing Hold prices everyone's flights; nobody pays until they open their own link.
+    turn.formNote = "[Hold] The traveller pressed Hold seats on the group plan.";
+    turn.resultLabel = "Hold result";
+    turn.booking = await callTool("hold_group", { blockId: input.form.blockId, baseUrl: input.origin ?? "" }, ctx);
   } else if (input.form) {
     // Throws FormError: the chat shows the reason under the form and nothing moves.
     turn.formNote = applyForm(ctx, input.form);

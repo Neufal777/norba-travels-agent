@@ -25,14 +25,13 @@ export const config = {
   norba: {
     apiKey: process.env.NORBA_API_KEY?.trim() ?? "",
     baseUrl: (process.env.NORBA_API_URL?.trim() || "https://api.norba.io").replace(/\/$/, ""),
-    bookingUrl: process.env.NORBA_BOOKING_URL?.trim() || "https://booking.norba.io",
   },
 };
 
 export const brainMode = () => (config.model.apiKey ? "meta" : "offline");
 
 /** Where the open-weight model runs: its partner when configured, otherwise Muse Spark stands in. */
-export const openModelMode = () => (config.openModel.apiKey ? "open" : config.model.apiKey ? "meta" : "offline");
+export const openModelMode = (): "open" | "meta" | "offline" => (config.openModel.apiKey ? "open" : config.model.apiKey ? "meta" : "offline");
 
 export const norbaMode = () => (config.norba.apiKey ? "live" : "mock");
 

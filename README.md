@@ -7,7 +7,9 @@ non-stop", "leave after 10", "with a bag"), the airline's price check, seat maps
 the full quote, card payment and the order with its booking reference. A side panel follows the twelve steps of the
 trip and says, at every moment, what is happening or what the agent waits for.
 
-Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026), theme *Build for Your World*.
+Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026), Startups track, theme *Build for Your
+World*. [Norba](https://norba.io) is our own startup: a flight-distribution API that connects travel businesses to the
+airlines through NDC. This agent is what we built on top of it during the hackathon.
 
 ## Built during the hackathon, and what already existed
 
@@ -21,8 +23,8 @@ commit history starts there. That covers the agent and the whole app:
 
 What already existed and is used, not claimed:
 
-- **The Norba API** (`api.norba.io`): Norba's existing flight-distribution product, which connects to the airlines.
-  This repository only calls it over HTTPS.
+- **The Norba API** (`api.norba.io`): the existing product of Norba, our own startup, which connects to the
+  airlines. This repository only calls it over HTTPS.
 - **The isometric drawing toolkit** in `src/components/drawing/iso.tsx`: ported from the Norba landing page (same
   author). The airport scene drawn with it, `hero-airport.tsx`, is new.
 - **The visual base**: the palette tokens' structure, the button and tooltip components and the motion utilities in

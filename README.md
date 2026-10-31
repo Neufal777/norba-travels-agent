@@ -1,11 +1,18 @@
 # Norba Travels Agent
 
-Tell it where you want to go — *"Madrid to Athens next Friday, back on Sunday, two adults"* — and an agent built on
-**Meta's Muse Spark** takes it from the first sentence to the e-tickets through the **Norba API**, which talks to the
-airlines directly (NDC, New Distribution Capability): live offers streamed as cards, filters by talking ("only
-non-stop", "leave after 10", "with a bag"), the airline's price check, seat maps, bags and extras, traveller details,
-the full quote, card payment and the order with its booking reference. A side panel follows the twelve steps of the
-trip and says, at every moment, what is happening or what the agent waits for.
+A travel agent that works for you before, during and after the trip, built on **Meta's models** and booking real
+flights through the **Norba API**, which talks to the airlines directly (NDC, New Distribution Capability).
+
+- **From any message to a trip.** Type it, say it, or drop an invitation, a screenshot of a chat or a PDF: Muse Spark
+  reads it and the agent searches, prices, seats, bags, travellers, card — to the booking reference.
+- **Group trips from several cities.** One Muse Spark agent per traveller shortlists flights from their city; a
+  coordinator thinking harder lands everyone together. Each traveller pays their own seat on their own link.
+- **A guardian after booking.** When the airline moves a flight, its notice reaches the agent, which explains it and
+  finds better flights; a photo of a departure board that says CANCELLED does the same. One tap switches.
+- **An agency desk.** The same agent for a travel agency's staff, on Muse Spark Open: client requests read, options
+  checked against the company's travel policy, the reply drafted; the agent at the desk approves.
+- **The booking layer for any AI assistant.** An MCP (Model Context Protocol) server gives any assistant real airline
+  search and checkout links, without ever handling a card.
 
 Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026), Startups track, theme *Build for Your
 World*. [Norba](https://norba.io) is our own startup: a flight-distribution API that connects travel businesses to the
@@ -16,10 +23,14 @@ airlines through NDC. This agent is what we built on top of it during the hackat
 Everything in this repository was written during the hackathon's building period, starting on 30 October 2026; the
 commit history starts there. That covers the agent and the whole app:
 
-- the agent loop on the Meta Model API (streaming, tool calls, reasoning effort) and the system prompt;
+- the agent loop on the Meta Model API (streaming, tool calls, structured output, vision, reasoning effort) and its
+  prompt; the voice dictation on Muse Voice Transcribe;
 - every tool, the twelve-step trip state and the booking flow, with payment kept away from the model;
+- reading attachments, the departure-board check and rebooking, the trip guardian and its webhook;
+- group trips (per-traveller agents and the coordinator), checkout links, the agency desk on Muse Spark Open;
+- the MCP server and the terminal assistant that uses it;
 - the offline planner and the mock Norba client used for development without keys;
-- the chat interface, the trip panel, the result cards, the booking forms and the airport drawing.
+- the chat interface, the trip panel, the cards, the forms, the departure board and the airport drawing.
 
 What already existed and is used, not claimed:
 
@@ -33,28 +44,44 @@ What already existed and is used, not claimed:
 - **Open-source libraries** listed in `package.json` (Next.js, React, Tailwind CSS, Radix UI, lucide-react, sonner,
   date-fns).
 
+## Meta's models in it
+
+| Model | Where | What it does |
+| --- | --- | --- |
+| Muse Spark 1.3 (Meta Model API) | `/` chat | Plans the trip, calls the tools, writes every answer (streamed Chat Completions with tool calls) |
+| Muse Spark 1.3 · reasoning high | group trips | The coordinator: one flight per traveller so the group lands together (structured output) |
+| Muse Spark 1.3 · structured output | group trips | Each traveller's own agent shortlists their best three with a reason |
+| Muse Spark 1.3 · vision | chat, agency desk | Reads invitations, screenshots, PDFs and departure boards into facts with boxes; turns a policy PDF into rules |
+| Muse Spark Open (open weights, Baseten) | `/agency` | Reads client requests, checks options against the travel policy, drafts replies |
+| Muse Voice Transcribe | chat | Dictation: the browser records, encodes WAV, the server transcribes |
+
 ## How it works
 
 ```
-browser ──POST /api/chat──▶ agent loop ──Chat Completions + tools──▶ Meta Model API (muse-spark-1.3)
-   ▲                            │
-   └──── NDJSON events ◀────────┤ tool calls
-         (text, steps,          ▼
-          offer cards)      Norba API: /v1/aviation/airports · /v1/shopping/offers/stream
-                                       /v1/shopping/calendar · /v1/offers/price · /v1/network/airlines
+browser ──POST /api/chat──▶ agent loop ──Chat Completions + tools──▶ Meta Model API (Muse Spark)
+   ▲  ▲                        │   └── structured output · vision ──▶ (reading files, group agents, coordinator)
+   │  └─ GET /api/updates ◀─┐  │ tool calls
+   └── NDJSON events ◀──────┤  ▼
+                            │ Norba API: airports · offers/stream · calendar · offers/price · seats · services
+                            │            quote · orders · orders/{id} · reshop · change/confirm
+Norba webhooks ─────────────┘ (order.schedule_changed → the conversation that booked it)
+
+other AI assistants ──MCP /api/mcp──▶ search · price · checkout link ──▶ /pay/<token> (the traveller books)
 ```
 
-- **The model never sees raw offers.** A search returns 50–150 offers of a few KB each; the model gets a digest
-  (itineraries grouped by flights, best-ranked first, each fare with a short ref like `o4`) while the browser receives
-  the full offers as they stream in, airline by airline.
-- **Follow-ups are free.** `refine_results` filters and re-sorts the last search in memory: no new airline request, no
-  new metered call.
-- **Refs tie text to cards.** When the agent writes `o4`, it is a chip that scrolls to and flashes that card.
-- **Personal data never reaches the model.** Travellers and card are filled in forms inside the chat that post to
-  this server only; the model reads a note (first names, "VISA ending 4242"). The card lives for the booking request
-  and is wiped after it, whatever the outcome.
-- **Only a person spends money.** The model can open the payment form but cannot book: the order is created when the
-  traveller presses Pay, for the amount they saw, with one Idempotency-Key per attempt so a retry never books twice.
+- **The model never sees raw offers.** A search returns 50–150 offers; the model gets a digest (itineraries grouped
+  by flights, best-ranked first, each fare with a short ref like `o4`) while the browser receives every offer as it
+  streams in, airline by airline. Follow-ups ("only non-stop") filter it locally, with no new airline request.
+- **The model never sees a file.** Muse Spark reads each attachment once, into a fixed JSON shape with a box around
+  every fact; the chat draws the boxes over the file, and the transcript keeps only the reading.
+- **Personal data never reaches the model.** Travellers and card are filled in forms that post to this server only;
+  the model reads a note (first names, "VISA ending 4242"). The card lives for the booking request and is wiped
+  after it.
+- **Only a person spends money or changes a booking.** The model opens the payment form but cannot book: the order is
+  created when the traveller presses Pay, with one Idempotency-Key per attempt. A flight changes when they press
+  Switch. Assistants on MCP and group travellers get checkout links and book on the page themselves.
+- **The model's group plan is checked.** Refs must be the traveller's own; a plan that misses the arrival window gives
+  way to the combination that lands the group closest together, and the chat says so.
 
 ### The twelve steps
 
@@ -65,8 +92,8 @@ browser ──POST /api/chat──▶ agent loop ──Chat Completions + tools�
 | Prepare | 07 Bags & extras · 08 Travellers · 09 Review |
 | Book | 10 Payment · 11 Booking · 12 E-tickets |
 
-Every tool moves its step (running, waiting for you, done, skipped, failed) and the server streams the whole trip
-to the panel; the model also reads it on every turn, so it always knows what comes next.
+Every tool moves its step and the server streams the whole trip to the panel; the model also reads it on every turn.
+A group trip moves the same panel: one request, a search per traveller, the plan, the holds, each payment.
 
 ### Agent tools
 
@@ -77,7 +104,9 @@ to the panel; the model also reads it on every turn, so it always knows what com
 | `choose_extras` | Bags and extras the airline sells with the fare | `GET /v1/offers/{id}/services` |
 | `choose_seats` | Seat map of every flight | `GET /v1/offers/{id}/seats` |
 | `find_airports` | City / airport name → IATA (International Air Transport Association) or metro code | `GET /v1/aviation/airports?q=` |
+| `find_rebooking` | Other flights for a booked, disrupted flight, each with a Switch button | `POST /v1/orders/{id}/reshop` |
 | `list_airlines` | Airlines a search reaches | `GET /v1/network/airlines` |
+| `plan_group_trip` | Agents per traveller and a coordinator for travellers from several cities | `POST /v1/shopping/offers/stream` |
 | `price_calendar` | Cheapest fare per day, for flexible dates | `GET /v1/shopping/calendar` |
 | `price_offer` | Confirm the chosen offer's price with the airline | `POST /v1/offers/price` |
 | `refine_results` | Filter / re-sort the last search locally | — |
@@ -86,60 +115,77 @@ to the panel; the model also reads it on every turn, so it always knows what com
 | `skip_step` | Skip seats or extras | — |
 | `suggest_replies` | Tappable answers under the message | — |
 
-Pressing Pay runs `book_trip` (`POST /v1/orders` with the card), which the model is not given.
+Buttons run what the model is not given: Pay runs `book_trip` (`POST /v1/orders`), Switch runs `change_flight`
+(`POST /v1/orders/{id}/change/confirm`), Hold seats runs `hold_group` (a price check and a checkout link per traveller).
+
+## Norba for any AI assistant (MCP)
+
+`/api/mcp` speaks MCP over Streamable HTTP (JSON-RPC 2.0). Tools: `create_checkout`, `find_airports`, `get_order`,
+`price_calendar`, `search_flights`. `create_checkout` prices the offer with the airline and returns a link; the
+traveller enters names and card on that page. Set `MCP_TOKEN` to require `Authorization: Bearer <token>`.
+
+```bash
+# any MCP client: point it at http://localhost:3200/api/mcp — or try the terminal assistant on Muse Spark:
+node scripts/any-assistant.mjs "Book me a non-stop from Madrid to Athens on 11 December"
+```
 
 ## Run it
 
 ```bash
 npm install
-cp .env.example .env.local   # optional: everything works with it empty
-npm run dev                  # http://localhost:3200
+cp .env.example .env.local   # optional: everything but vision, voice and the desk works with it empty
+npm run dev                  # http://localhost:3200 — the agency desk is at /agency
 ```
-
-It runs in three combinations, picked from the environment:
 
 | `MODEL_API_KEY` | `NORBA_API_KEY` | What you get |
 | --- | --- | --- |
-| empty | empty | **Offline planner + mock flights.** Rule-based Spanish/English parsing drives the same tools through the whole booking; offers, seat maps, extras and orders are generated locally (card 4242 4242 4242 4242 books, 4000 0000 0000 0002 is declined). Good for UI work. |
-| empty | `nbr_test_…` | Offline planner on real airline sandbox offers. |
-| set | set | **The real thing:** Muse Spark plans, Norba searches. |
+| empty | empty | **Offline planner + mock flights.** Rule-based Spanish/English parsing drives the same tools through the whole booking; offers, seat maps, extras, orders, changes and disruptions are generated locally (card 4242 4242 4242 4242 books, 4000 0000 0000 0002 is declined). |
+| set | empty | **Muse Spark on mock flights**: every Meta feature, nothing metered on Norba. |
+| set | `nbr_test_…` | **The real thing on the airlines' sandboxes.** |
 
-Every keyed Norba request is metered, so the mock is the default while building the interface.
+Every keyed Norba request is metered, so the mock is the default while building. In mock mode a booking card can
+simulate the airline moving the flight, and `/board?c=<conversation>&status=CANCELLED` is a departure board showing
+the booked flight cancelled, to photograph.
 
-### Switching the model on
-
-The Meta Model API speaks OpenAI-compatible Chat Completions, so the client is a plain `fetch` with streaming and tool
-calls (`src/server/llm/meta.ts`):
+### The models
 
 ```bash
-MODEL_API_KEY=…                      # from the Meta developer dashboard
+MODEL_API_KEY=…                      # Meta Model API
 MODEL_BASE_URL=https://api.meta.ai/v1
-MODEL_ID=muse-spark-1.3              # GET /v1/models lists what your team can use
-MODEL_REASONING_EFFORT=low           # minimal | low | medium | high | xhigh | max, or empty
+MODEL_ID=muse-spark-1.3
+MODEL_REASONING_EFFORT=low           # the chat; minimal | low | medium | high | xhigh | max, or empty
+MODEL_PLANNER_EFFORT=high            # the group coordinator
+OPEN_MODEL_API_KEY=…                 # Muse Spark Open for the agency desk (Baseten by default)
+OPEN_MODEL_ID=meta-models/muse-spark-open-1026
 ```
 
-The same variables point it at Llama open weights on Baseten, Fireworks or Modal (their OpenAI-compatible endpoints):
-change the base URL and model id, and leave `MODEL_REASONING_EFFORT` empty if the provider does not take it.
+The chat can run on Muse Spark Open too: point `MODEL_BASE_URL` and `MODEL_ID` at the partner, leave the effort empty
+if it does not take one. Airline schedule changes arrive through `/api/webhooks/norba` with `NORBA_WEBHOOK_SECRET`.
 
 ## Layout
 
 ```
 src/
-  app/api/chat        POST: one chat turn or form answer, answered as NDJSON events
-  app/api/status      which model and which Norba environment are in use
-  server/agent        the loop (run.ts), shopping and booking tools, forms, the trip's steps, prompt, offline planner
-  server/llm          Meta Model API client (Chat Completions, streaming, tool calls)
-  server/norba        Norba client: live (X-API-Key) and mock, behind one interface
-  components/chat     chat UI: trip panel, messages, offer cards, seat map, extras, forms, receipt, confirmation
-  lib                 types shared by server and browser, offer grouping and ranking, formatting
+  app/api/chat         POST: one chat turn, form answer, attachment or notice, answered as NDJSON events
+  app/api/mcp          MCP server for other assistants
+  app/api/…            agency desk, checkout payment, transcription, updates poll, Norba webhook, mock simulations
+  app/agency           the agency desk
+  app/board            a departure board to film
+  app/pay/[token]      checkout links
+  server/agent         the loop (run.ts), tools (shopping, booking, servicing, group), vision, guardian, prompt, offline planner
+  server/llm           Meta Model API client (Chat Completions, streaming, tools, structured output) and voice
+  server/norba         Norba client: live (X-API-Key) and mock, behind one interface
+  server/agency.ts · checkout.ts · mcp.ts
+  components/chat      chat UI: trip panel, messages, cards, forms, vision, group plan, notices, rebooking
+scripts/any-assistant.mjs   a terminal assistant on Muse Spark that books through Norba's MCP server
 ```
 
-Conversations and trips live in server memory for three hours (`server/agent/sessions.ts`); several instances would need a
-shared store such as Redis.
+Conversations, checkouts and mock state live in server memory for a few hours; several instances would need a shared
+store such as Redis.
 
 ## Design
 
 Norba's brand: Cloud, Mist, Stone, Slate and Midnight with Vermilion for action, the Norba mark drawn in SVG, square
 corners, hairline borders, mono uppercase eyebrows, 6 px square markers and the rising-fill buttons with the sliding
-boxed arrow. Chat-specific motion (messages rising in, the square caret while the agent writes, a square crossing the
-flight line while airlines answer, the hero's flying square) honours `prefers-reduced-motion`. Light and dark themes.
+boxed arrow. Motion (messages rising in, the scan line while Muse Spark reads a file, boxes drawn on what it found, a
+square crossing the flight line while airlines answer) honours `prefers-reduced-motion`. Light and dark themes.

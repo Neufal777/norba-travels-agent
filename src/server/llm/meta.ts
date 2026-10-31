@@ -1,6 +1,7 @@
 import "server-only";
 
 import { config } from "../config";
+import { spendModelCall } from "../guard";
 import type { ChatTurn, CompletionResult, ToolCall, ToolSchema } from "./types";
 
 /*
@@ -46,6 +47,11 @@ async function failure(res: Response) {
   return new ModelError(`Model API ${res.status}: ${message || res.statusText}`, res.status);
 }
 
+/** Every model call counts against the app's daily cap (MAX_MODEL_CALLS_PER_DAY). */
+export function budget() {
+  if (!spendModelCall()) throw new ModelError("This demo reached today's limit of model calls. Try again tomorrow.", 429);
+}
+
 const timeout = (signal?: AbortSignal) => (signal ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)]) : AbortSignal.timeout(TIMEOUT_MS));
 
 type Delta = { content?: string | null; tool_calls?: { index: number; id?: string; function?: { name?: string; arguments?: string } }[] };
@@ -56,6 +62,7 @@ type Chunk = { choices?: { delta?: Delta; message?: Delta & { tool_calls?: ToolC
  * Images and PDFs ride in the messages as content parts, so this is also how the agent sees.
  */
 export async function structured<T>(messages: ChatTurn[], name: string, schema: Record<string, unknown>, o: CallOptions = {}): Promise<T> {
+  budget();
   const e = endpoint(o);
   const body: Record<string, unknown> = {
     model: e.model,
@@ -82,6 +89,7 @@ export async function structured<T>(messages: ChatTurn[], name: string, schema: 
 }
 
 export async function complete(messages: ChatTurn[], tools: ToolSchema[], onText: (delta: string) => void, signal?: AbortSignal, o: CallOptions = {}): Promise<CompletionResult> {
+  budget();
   const e = endpoint(o);
   const body: Record<string, unknown> = {
     model: e.model,

@@ -1,4 +1,5 @@
 import { getCheckout, payCheckout } from "@/server/checkout";
+import { limited } from "@/server/guard";
 import { FormError, validCard, validContact, validPassengers } from "@/server/agent/forms";
 import { NorbaError } from "@/server/norba/port";
 import type { Contact, Passenger } from "@/lib/types";
@@ -10,6 +11,8 @@ type Body = { passengers?: Passenger[]; contact?: Contact; card?: { number: stri
 
 /** Pay on a checkout link: the traveller's details and card are checked as in the chat, then the airline books. */
 export async function POST(req: Request, { params }: { params: Promise<{ token: string }> }) {
+  const tooMany = limited(req, "pay", 20);
+  if (tooMany) return tooMany;
   const c = getCheckout((await params).token);
   if (!c) return Response.json({ error: "This link has expired." }, { status: 404 });
   const body = (await req.json().catch(() => ({}))) as Body;

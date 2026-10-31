@@ -3,6 +3,7 @@ import { brain, runAgent } from "@/server/agent/run";
 import { session } from "@/server/agent/sessions";
 import { ModelError } from "@/server/llm/meta";
 import { config } from "@/server/config";
+import { limited } from "@/server/guard";
 import { validAttachment } from "@/server/agent/vision";
 import type { AgentEvent, Attachment, FormSubmission } from "@/lib/types";
 
@@ -26,6 +27,8 @@ function publicOrigin(req: Request) {
 
 /** One chat turn: the agent's events as NDJSON (one JSON object per line), ending with `done` or `error`. */
 export async function POST(req: Request) {
+  const tooMany = limited(req, "chat");
+  if (tooMany) return tooMany;
   const body = (await req.json().catch(() => ({}))) as Body;
   const attachments = Array.isArray(body.attachments) ? body.attachments : [];
   if (attachments.length > MAX_ATTACHMENTS) return Response.json({ error: `at most ${MAX_ATTACHMENTS} files per message` }, { status: 413 });
@@ -65,7 +68,9 @@ export async function POST(req: Request) {
             e instanceof FormError
               ? e.message
               : e instanceof ModelError
-              ? e.status === 401 || e.status === 403
+              ? e.status === 429
+                ? e.message.startsWith("This demo") ? e.message : "The model is busy right now. Try again in a minute."
+                : e.status === 401 || e.status === 403
                 ? "The Meta Model API refused the key. Check MODEL_API_KEY."
                 : e.message
               : (e as Error)?.message || "Something went wrong";

@@ -56,6 +56,13 @@ async function* sseFrames(body: ReadableStream<Uint8Array>) {
   }
 }
 
+/** A production key books for real: refused unless ALLOW_PRODUCTION_BOOKINGS says otherwise. */
+function refuseProductionWrites() {
+  if (config.norba.apiKey.startsWith("nbr_live_") && !config.allowProductionBookings) {
+    throw new NorbaError("Real bookings are switched off in this demo (it runs on a production Norba key without ALLOW_PRODUCTION_BOOKINGS).", 403, "production_bookings_off");
+  }
+}
+
 export const liveNorba: NorbaPort = {
   async search(req: SearchRequest, onBatch, signal) {
     const res = await fetch(`${config.norba.baseUrl}/v1/shopping/offers/stream`, {
@@ -148,6 +155,7 @@ export const liveNorba: NorbaPort = {
   },
 
   async createOrder(req: OrderRequest, idempotencyKey: string) {
+    refuseProductionWrites();
     const res = await fetch(`${config.norba.baseUrl}/v1/orders`, {
       method: "POST",
       headers: { "X-API-Key": config.norba.apiKey, "Content-Type": "application/json", Accept: "application/json", "Idempotency-Key": idempotencyKey },
@@ -188,6 +196,7 @@ export const liveNorba: NorbaPort = {
   },
 
   async changeOrder(order, offerId, idempotencyKey, payment) {
+    refuseProductionWrites();
     const res = await fetch(`${config.norba.baseUrl}/v1/orders/${encodeURIComponent(order.order_id)}/change/confirm?airline=${order.airline}`, {
       method: "POST",
       headers: { "X-API-Key": config.norba.apiKey, "Content-Type": "application/json", Accept: "application/json", "Idempotency-Key": idempotencyKey },

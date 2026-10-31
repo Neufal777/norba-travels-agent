@@ -1,6 +1,7 @@
 import { draft, type DeskEvent } from "@/server/agency";
 import { brainMode, openModelMode } from "@/server/config";
 import { dataUrlBytes, MAX_ATTACHMENT_BYTES } from "@/server/agent/vision";
+import { limited, limits } from "@/server/guard";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -9,6 +10,9 @@ type Body = { request?: string; policy?: string; policyPdf?: string; policyName?
 
 /** One request drafted at the agency desk, streamed as NDJSON: each step, the reading, the checked options, the reply. */
 export async function POST(req: Request) {
+  // A draft is four model calls: the desk gets a quarter of the chat's allowance.
+  const tooMany = limited(req, "desk", Math.ceil(limits.perVisitorPerHour / 4));
+  if (tooMany) return tooMany;
   if (openModelMode() === "offline") return Response.json({ error: "The desk needs a model: set OPEN_MODEL_API_KEY or MODEL_API_KEY." }, { status: 503 });
   const body = (await req.json().catch(() => ({}))) as Body;
   const request = (body.request ?? "").trim().slice(0, 4000);

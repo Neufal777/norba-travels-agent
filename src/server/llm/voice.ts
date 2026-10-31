@@ -1,13 +1,14 @@
 import "server-only";
 
 import { config } from "../config";
-import { ModelError } from "./meta";
+import { budget, ModelError } from "./meta";
 
 /**
  * Muse Voice Transcribe: POST {base}/asr/transcribe, multipart with a JSON `request` part and the `audio` part.
  * The audio is WAV, mono, 16-bit PCM at 16 or 24 kHz; the browser encodes it that way before sending.
  */
 export async function transcribe(wav: Blob, opts: { languages?: string[]; keywords?: string[]; signal?: AbortSignal } = {}) {
+  budget();
   const request: Record<string, unknown> = { mode: "PUSH_TO_TALK", model: config.voice.id, audioEncoding: "WAV" };
   if (opts.languages?.length) request.languageBias = opts.languages;
   // Airport and airline words the recogniser would otherwise spell as common words.

@@ -162,6 +162,22 @@ OPEN_MODEL_ID=meta-models/muse-spark-open-1026
 The chat can run on Muse Spark Open too: point `MODEL_BASE_URL` and `MODEL_ID` at the partner, leave the effort empty
 if it does not take one. Airline schedule changes arrive through `/api/webhooks/norba` with `NORBA_WEBHOOK_SECRET`.
 
+## Deploy (Render)
+
+`Dockerfile` builds the Next.js standalone server (Node 22, non-root, port from `PORT`); `render.yaml` is a Blueprint
+for one Docker web service in Frankfurt with `/api/status` as health check and manual deploys. Secrets are asked for
+when the Blueprint is applied and never live in the repository or the image. Conversations, checkout links and limits
+live in memory, so the service runs as a single instance.
+
+```bash
+docker build -t norba-travels-agent .
+docker run -p 3300:10000 --env-file .env.local norba-travels-agent   # http://localhost:3300
+```
+
+A public demo spends money on every model call: `MAX_MODEL_CALLS_PER_DAY` caps the app and
+`MAX_REQUESTS_PER_VISITOR_PER_HOUR` each visitor. With a `nbr_live_` Norba key real bookings stay off unless
+`ALLOW_PRODUCTION_BOOKINGS=true`.
+
 ## Layout
 
 ```

@@ -1,0 +1,52 @@
+# Render Blueprint for Norba Travels Agent. Secrets are marked sync: false: Render asks for them when the Blueprint
+# is applied and never reads them from this file. Pick the instance type by hand in Render.
+services:
+  - type: web
+    name: norba-travels-agent
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: frankfurt
+    # Conversations, checkout links and limits live in memory: one instance, no autoscaling.
+    numInstances: 1
+    healthCheckPath: /api/status
+    # Deploys only when started by hand.
+    autoDeploy: false
+    envVars:
+      # Meta Model API
+      - key: MODEL_API_KEY
+        sync: false
+      - key: MODEL_BASE_URL
+        value: https://api.meta.ai/v1
+      - key: MODEL_ID
+        value: muse-spark-1.3
+      - key: MODEL_REASONING_EFFORT
+        value: low
+      - key: MODEL_PLANNER_EFFORT
+        value: high
+      - key: VOICE_MODEL_ID
+        value: muse-voice-transcribe-1.0
+      # Muse Spark Open for the agency desk (optional: without a key Muse Spark stands in)
+      - key: OPEN_MODEL_API_KEY
+        sync: false
+      - key: OPEN_MODEL_BASE_URL
+        value: https://inference.baseten.co/v1
+      - key: OPEN_MODEL_ID
+        value: meta-models/muse-spark-open-1026
+      # Norba (empty key = mock flights; a nbr_test_ key = the airlines' sandboxes)
+      - key: NORBA_API_KEY
+        sync: false
+      - key: NORBA_API_URL
+        value: https://api.norba.io
+      - key: NORBA_WEBHOOK_SECRET
+        sync: false
+      - key: ALLOW_PRODUCTION_BOOKINGS
+        value: "false"
+      # This app
+      - key: PUBLIC_URL
+        sync: false
+      - key: MCP_TOKEN
+        sync: false
+      - key: MAX_MODEL_CALLS_PER_DAY
+        value: "1500"
+      - key: MAX_REQUESTS_PER_VISITOR_PER_HOUR
+        value: "60"

@@ -1,0 +1,14 @@
+# Never in the image: secrets, the local demo script, builds, dependencies, git.
+.env*
+!.env.example
+demo.md
+.git
+.next
+.next-*
+node_modules
+npm-debug.log*
+*.tsbuildinfo
+.DS_Store
+Dockerfile
+.dockerignore
+render.yaml

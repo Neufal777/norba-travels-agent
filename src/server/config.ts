@@ -18,6 +18,11 @@ export const config = {
   },
   /** Muse Voice Transcribe, on the Meta Model API with the same key. */
   voice: { id: process.env.VOICE_MODEL_ID?.trim() || "muse-voice-transcribe-1.0" },
+  /**
+   * With a production Norba key, real bookings (cards charged, tickets issued) stay off unless this is "true": a
+   * public demo should run on a sandbox key.
+   */
+  allowProductionBookings: process.env.ALLOW_PRODUCTION_BOOKINGS?.trim() === "true",
   /** Bearer token the MCP endpoint asks for; empty leaves it open (local development). */
   mcp: { token: process.env.MCP_TOKEN?.trim() ?? "" },
   /** Where this app is reached from outside, for the checkout links it hands out; empty uses the request's host. */

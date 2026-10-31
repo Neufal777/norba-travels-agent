@@ -1,6 +1,7 @@
 import { session } from "@/server/agent/sessions";
 import { config } from "@/server/config";
 import { MCP_TOOLS } from "@/server/mcp";
+import { limited } from "@/server/guard";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -59,6 +60,9 @@ async function handle(m: RpcRequest, sid: string, req: Request) {
 }
 
 export async function POST(req: Request) {
+  // Every search reaches Norba: an MCP client gets the chat's allowance, counted per call.
+  const tooMany = limited(req, "mcp");
+  if (tooMany) return tooMany;
   if (config.mcp.token && req.headers.get("authorization") !== `Bearer ${config.mcp.token}`) {
     return Response.json(fail(null, -32001, "Unauthorized"), { status: 401, headers: { ...CORS, "WWW-Authenticate": "Bearer" } });
   }

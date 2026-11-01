@@ -8,7 +8,7 @@ import { STEPS } from "@/components/drawing/architecture-steps";
 import { DocsToc } from "./docs-toc";
 import { Sq } from "@/components/status";
 import { brain } from "@/server/agent/run";
-import { config, norbaEnvironment, openModelMode } from "@/server/config";
+import { config, norbaEnvironment } from "@/server/config";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -131,7 +131,6 @@ POST /api/mcp   {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"
 /** The project's documentation: what it does, which Meta models and Norba endpoints it uses, and how to run it. */
 export default function Docs() {
   const b = brain();
-  const open = openModelMode();
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="hr-frost sticky top-0 z-40 border-b border-hr-line">
@@ -142,9 +141,6 @@ export default function Docs() {
           <span className="ml-auto hidden items-center gap-4 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 md:inline-flex">
             <span className="inline-flex items-center gap-1.5">
               <Sq className={b.mode === "meta" ? "bg-hr-success" : "bg-hr-concrete"} /> {b.model}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Sq className={open === "open" ? "bg-hr-success" : "bg-hr-concrete"} /> desk: {open === "open" ? config.openModel.id : open === "meta" ? "Muse Spark stand-in" : "off"}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Sq className={norbaEnvironment() === "mock" ? "bg-hr-concrete" : "bg-hr-success"} /> Norba · {norbaEnvironment()}
@@ -234,13 +230,13 @@ export default function Docs() {
                 ["Muse Spark 1.3", "Each traveller's own agent in a group trip: shortlists their best three with a reason", "Structured output (json_schema, strict)", <C key="2">server/agent/group.ts</C>],
                 ["Muse Spark 1.3 · reasoning high", "The group coordinator: one flight per traveller inside the arrival window and budget", "Structured output, reasoning_effort=high", <C key="3">server/agent/group.ts</C>],
                 ["Muse Spark 1.3 · vision", "Reads invitations, screenshots, PDFs and departure boards; a policy PDF into rules", "image_url and file content parts, structured output, 0–1000 boxes", <C key="4">server/agent/vision.ts</C>],
-                ["Muse Spark Open", "The agency desk: reads requests, checks the travel policy, drafts replies", "Open weights on Baseten (OpenAI-compatible), structured output", <C key="5">server/agency.ts</C>],
+                ["Muse Spark 1.3", "The agency desk: reads requests, checks the travel policy, drafts replies", "Structured output (json_schema, strict), vision for the policy PDF", <C key="5">server/agency.ts</C>],
                 ["Muse Voice Transcribe", "Dictation in the chat", "POST /v1/asr/transcribe, WAV 24 kHz mono, language bias, keywords", <C key="6">server/llm/voice.ts</C>],
               ]}
             />
             <P>
-              Without <C>OPEN_MODEL_API_KEY</C> the desk runs on Muse Spark and says so on every step. Without <C>MODEL_API_KEY</C> a rule-based planner drives the same tools; vision,
-              voice, group agents and the desk need a model.
+              The chat, the group agents and the agency desk all run on the same Muse Spark model. Without <C>MODEL_API_KEY</C> a rule-based planner drives the same tools;
+              vision, voice, group agents and the desk need the model.
             </P>
           </Section>
 
@@ -377,7 +373,7 @@ export default function Docs() {
             <Table
               head={["Flow", "Steps"]}
               rows={[
-                ["Agency desk", "Request read (Muse Spark Open) → Norba searches the cabin asked for and economy → each option checked against the policy → reply drafted → Approve prices it and adds a checkout link"],
+                ["Agency desk", "Request read (Muse Spark) → Norba searches the cabin asked for and economy → each option checked against the policy → reply drafted → Approve prices it and adds a checkout link"],
                 ["Board photo", "Photo → Muse Spark reads every row → the traveller's flight found by number → disrupted → find_rebooking → Switch"],
                 ["Booking", "Request → airports → search → choose → price → seats → extras → travellers → review → payment → booking → e-tickets"],
                 ["Document to trip", "File → Muse Spark reads it (kind, facts with boxes, trip) → the agent asks only what is missing → search"],
@@ -419,9 +415,6 @@ export default function Docs() {
                 ["NORBA_API_KEY", "empty (mock)", "nbr_test_… sandbox, nbr_live_… production"],
                 ["NORBA_API_URL", "https://api.norba.io", "Norba base URL"],
                 ["NORBA_WEBHOOK_SECRET", "empty", "whsec_ secret for /api/webhooks/norba"],
-                ["OPEN_MODEL_API_KEY", "empty", "Partner key for Muse Spark Open (the desk)"],
-                ["OPEN_MODEL_BASE_URL", "https://inference.baseten.co/v1", "Partner base URL"],
-                ["OPEN_MODEL_ID", "meta-models/muse-spark-open-1026", "Open-weight model id"],
                 ["PUBLIC_URL", "the request's host", "Base of checkout links"],
                 ["VOICE_MODEL_ID", "muse-voice-transcribe-1.0", "Dictation model"],
               ]}

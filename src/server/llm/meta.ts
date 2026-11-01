@@ -6,8 +6,7 @@ import type { ChatTurn, CompletionResult, ToolCall, ToolSchema } from "./types";
 
 /*
  * Meta Model API over its OpenAI-compatible Chat Completions endpoint (POST {base}/chat/completions, Bearer key).
- * Two providers answer the same request: "meta" is Muse Spark on api.meta.ai; "open" is Muse Spark Open, the
- * open-weight model, served by a partner such as Baseten. Without a key for "open", Muse Spark stands in for it.
+ * Muse Spark answers every call: the chat, file reading, the group agents and the agency desk.
  */
 
 const TIMEOUT_MS = 120_000;
@@ -22,16 +21,12 @@ export class ModelError extends Error {
   }
 }
 
-export type Provider = "meta" | "open";
-
-/** One model call's settings: which provider, which model, how hard it thinks. */
-export type CallOptions = { provider?: Provider; model?: string; effort?: string; signal?: AbortSignal };
+/** One model call's settings: which model, how hard it thinks. */
+export type CallOptions = { model?: string; effort?: string; signal?: AbortSignal };
 
 function endpoint(o: CallOptions = {}) {
-  const open = o.provider === "open" && config.openModel.apiKey;
-  const p = open ? config.openModel : config.model;
-  const effort = o.effort ?? (open ? "" : config.model.reasoningEffort);
-  return { url: `${p.baseUrl}/chat/completions`, key: p.apiKey, model: o.model ?? p.id, effort, provider: (open ? "open" : "meta") as Provider };
+  const p = config.model;
+  return { url: `${p.baseUrl}/chat/completions`, key: p.apiKey, model: o.model ?? p.id, effort: o.effort ?? p.reasoningEffort };
 }
 
 /** The model a call with these options runs on, as the chat labels it. */
@@ -79,7 +74,7 @@ export async function structured<T>(messages: ChatTurn[], name: string, schema: 
   if (!res.ok) throw await failure(res);
   const j = (await res.json()) as Chunk;
   const content = j.choices?.[0]?.message?.content ?? "";
-  // Some open-weight servers wrap JSON in a code fence even under a schema.
+  // A model may wrap JSON in a code fence even under a schema.
   const raw = content.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
   try {
     return JSON.parse(raw) as T;
@@ -109,7 +104,7 @@ export async function complete(messages: ChatTurn[], tools: ToolSchema[], onText
   });
   if (!res.ok || !res.body) throw await failure(res);
 
-  // A provider that ignores `stream` answers one JSON body: read it the same way.
+  // An endpoint that ignores `stream` answers one JSON body: read it the same way.
   if (!(res.headers.get("content-type") ?? "").includes("event-stream")) {
     const j = (await res.json()) as Chunk;
     const m = j.choices?.[0]?.message;

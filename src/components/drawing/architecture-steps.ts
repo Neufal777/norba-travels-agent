@@ -7,6 +7,6 @@ export const STEPS = [
   { n: "5", title: "Offers stream back", sub: "Into the chat as they arrive" },
   { n: "6", title: "You pay, it books", sub: "The order is made with the airline" },
   { n: "7", title: "The airline moves a flight", sub: "Webhook → new flights, one tap" },
-  { n: "A", title: "Agency desk", sub: "Muse Spark Open drafts the reply" },
+  { n: "A", title: "Agency desk", sub: "Muse Spark drafts the reply" },
   { n: "B", title: "Any AI assistant", sub: "MCP: search, price, checkout link" },
 ] as const;

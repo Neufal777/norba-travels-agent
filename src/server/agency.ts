@@ -4,17 +4,17 @@ import { airlineName } from "@/lib/airlines";
 import { clock, dateLabel, duration, money } from "@/lib/format";
 import { groupItineraries, sortItineraries } from "@/lib/offers";
 import type { CabinClass, Offer } from "@/lib/types";
-import { config, openModelMode } from "./config";
-import { modelLabel, structured, type CallOptions } from "./llm/meta";
+import { brainMode } from "./config";
+import { modelLabel, structured } from "./llm/meta";
 import type { ContentPart } from "./llm/types";
 import { openCheckout, slotsFor } from "./checkout";
 import { norba } from "./norba";
 
 /*
- * The agency desk: the same agent, for a travel agency's staff. A client's request arrives by email or chat; Muse
- * Spark Open — Meta's open-weight model, served by a partner — reads it, Norba searches, the model checks every option
- * against the client company's travel policy and drafts the reply. The person at the desk approves one option, which
- * becomes a checkout link for the client. Without a partner key Muse Spark stands in, and the desk says so.
+ * The agency desk: the same agent, for a travel agency's staff, on the same model as the chat. A client's request
+ * arrives by email or chat; Muse Spark reads it, Norba searches, Muse Spark checks every option against the client
+ * company's travel policy and drafts the reply. The person at the desk approves one option, which becomes a checkout
+ * link for the client.
  */
 
 export type DeskStep = { id: string; label: string; status: "running" | "done" | "failed"; detail?: string; model?: string };
@@ -45,8 +45,7 @@ type Draft = { offers: Map<string, Offer>; adults: number; traveller: string; at
 const store = globalThis as unknown as { __naDesk?: Map<string, Draft> };
 const drafts = (store.__naDesk ??= new Map<string, Draft>());
 
-const OPEN: CallOptions = { provider: "open" };
-const label = () => (openModelMode() === "open" ? `${modelLabel(OPEN)} · Baseten` : `${modelLabel()} (standing in for Muse Spark Open)`);
+const label = () => modelLabel();
 
 const CABINS: CabinClass[] = ["economy", "premium_economy", "business", "first"];
 
@@ -115,7 +114,7 @@ export async function draft(request: string, policy: { text?: string; pdf?: stri
             notes: { type: "string", description: "Constraints that matter for the flight: meeting times, preferences" },
           },
         },
-        { ...OPEN, signal },
+        { signal },
       ),
     (r) => `${r.traveller_name} · ${r.origin} → ${r.destination} · ${r.depart_date}${r.return_date ? `–${r.return_date}` : ""} · ${r.cabin.replace("_", " ")}`,
     model,
@@ -173,7 +172,7 @@ export async function draft(request: string, policy: { text?: string; pdf?: stri
             summary: { type: "string", description: "One sentence for the agent at the desk" },
           },
         },
-        { ...OPEN, signal },
+        { signal },
       ),
     (r) => `${r.verdicts.filter((v) => v.compliant).length} of ${options.length} within policy`,
     model,
@@ -195,7 +194,7 @@ export async function draft(request: string, policy: { text?: string; pdf?: stri
         ],
         "agency_reply",
         { type: "object", additionalProperties: false, required: ["subject", "body"], properties: { subject: { type: "string" }, body: { type: "string" } } },
-        { ...OPEN, signal },
+        { signal },
       ),
     () => "ready to send",
     model,
@@ -214,4 +213,4 @@ export async function approve(draftId: string, ref: string, base: string) {
   return { url: `${base}/pay/${c.token}`, total: c.total, currency: c.currency, until: priced.price_guaranteed_until };
 }
 
-export const deskModel = () => ({ mode: openModelMode(), label: label(), partner: config.openModel.baseUrl.replace(/^https?:\/\//, "").split("/")[0] });
+export const deskModel = () => ({ mode: brainMode(), label: label() });

@@ -27,13 +27,6 @@ services:
         value: high
       - key: VOICE_MODEL_ID
         value: muse-voice-transcribe-1.0
-      # Muse Spark Open for the agency desk (optional: without a key Muse Spark stands in)
-      - key: OPEN_MODEL_API_KEY
-        sync: false
-      - key: OPEN_MODEL_BASE_URL
-        value: https://inference.baseten.co/v1
-      - key: OPEN_MODEL_ID
-        value: meta-models/muse-spark-open-1026
       # Norba (empty key = mock flights; a nbr_test_ key = the airlines' sandboxes)
       - key: NORBA_API_KEY
         sync: false

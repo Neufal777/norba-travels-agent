@@ -19,8 +19,8 @@ flights through the **[Norba API](https://norba.io)**, which talks to the airlin
   coordinator thinking harder lands everyone together. Each traveller pays their own seat on their own link.
 - **A guardian after booking.** When the airline moves a flight, its notice reaches the agent, which explains it and
   finds better flights; a photo of a departure board that says CANCELLED does the same. One tap switches.
-- **An agency desk.** The same agent for a travel agency's staff, on Muse Spark Open: client requests read, options
-  checked against the company's travel policy, the reply drafted; the agent at the desk approves.
+- **An agency desk.** The same agent for a travel agency's staff, on the same Muse Spark: client requests read,
+  options checked against the company's travel policy, the reply drafted; the agent at the desk approves.
 - **The booking layer for any AI assistant.** An MCP (Model Context Protocol) server gives any assistant real airline
   search and checkout links, without ever handling a card.
 
@@ -64,14 +64,14 @@ airlines through NDC. This agent is what we built on top of it during the hackat
 | Muse Spark 1.3 · reasoning high | group trips | The coordinator: one flight per traveller so the group lands together (structured output) |
 | Muse Spark 1.3 · structured output | group trips | Each traveller's own agent shortlists their best three with a reason |
 | Muse Spark 1.3 · vision | chat, agency desk | Reads invitations, screenshots, PDFs and departure boards into facts with boxes; turns a policy PDF into rules |
-| Muse Spark Open (open weights, Baseten) | `/agency` | Reads client requests, checks options against the travel policy, drafts replies |
+| Muse Spark 1.3 · structured output | `/agency` | The agency desk: reads client requests, checks options against the travel policy, drafts replies |
 | Muse Voice Transcribe | chat | Dictation: the browser records, encodes WAV, the server transcribes |
 
 ## How it works
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.png">
-  <img alt="How a trip is booked, step by step: 1 you ask, 2 Muse Spark plans, 3 the agent calls Norba, 4 Norba asks the airlines, 5 offers stream back, 6 you pay and it books, 7 the airline moves a flight; A the agency desk on Muse Spark Open, B any AI assistant over MCP." src="docs/architecture-light.png">
+  <img alt="How a trip is booked, step by step: 1 you ask, 2 Muse Spark plans, 3 the agent calls Norba, 4 Norba asks the airlines, 5 offers stream back, 6 you pay and it books, 7 the airline moves a flight; A the agency desk on the same Muse Spark, B any AI assistant over MCP." src="docs/architecture-light.png">
 </picture>
 
 - **A chat turn** is `POST /api/chat`, answered as NDJSON events; `GET /api/updates` brings later changes (a paid group
@@ -168,12 +168,10 @@ MODEL_BASE_URL=https://api.meta.ai/v1
 MODEL_ID=muse-spark-1.3
 MODEL_REASONING_EFFORT=low           # the chat; minimal | low | medium | high | xhigh | max, or empty
 MODEL_PLANNER_EFFORT=high            # the group coordinator
-OPEN_MODEL_API_KEY=…                 # Muse Spark Open for the agency desk (Baseten by default)
-OPEN_MODEL_ID=meta-models/muse-spark-open-1026
 ```
 
-The chat can run on Muse Spark Open too: point `MODEL_BASE_URL` and `MODEL_ID` at the partner, leave the effort empty
-if it does not take one. Airline schedule changes arrive through `/api/webhooks/norba` with `NORBA_WEBHOOK_SECRET`.
+The chat, file reading, the group agents and the agency desk all run on this one model. Airline schedule changes
+arrive through `/api/webhooks/norba` with `NORBA_WEBHOOK_SECRET`.
 
 ## Deploy (Render)
 

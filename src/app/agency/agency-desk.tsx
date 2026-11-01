@@ -37,7 +37,7 @@ const POLICY = `Acme Corp — Air travel policy (2026)
 4. Prefer non-stop flights when they cost less than 20% more than a connection.
 5. Book at least 7 days before departure.`;
 
-type Model = { mode: "open" | "meta" | "offline"; label: string; partner: string };
+type Model = { mode: "meta" | "offline"; label: string };
 
 async function* lines(body: ReadableStream<Uint8Array>) {
   const reader = body.getReader();
@@ -171,7 +171,7 @@ export function AgencyDesk({ model }: { model: Model }) {
             <NorbaWordmark sub="Agency desk" />
           </Link>
           <span className="ml-auto hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 sm:inline-flex">
-            <Sq className={model.mode === "open" ? "bg-hr-success" : "bg-hr-concrete"} /> {model.label}
+            <Sq className={model.mode === "meta" ? "bg-hr-success" : "bg-hr-concrete"} /> {model.label}
           </span>
           <NavLinks className="max-md:ml-auto" />
         </div>

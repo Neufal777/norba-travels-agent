@@ -6,8 +6,8 @@ import { Badge, Legend, Tag } from "./kit";
 
 /**
  * The docs page's architecture, as a small campus on drawing paper, read as numbered steps. The agent's building
- * stands in the middle. The traveller's laptop sends it a chat turn and gets its events back. Two masts on its roof
- * reach the Meta towers behind: Muse Spark for the chat, Muse Spark Open for the agency desk. Norba's building stands
+ * stands in the middle. The traveller's laptop sends it a chat turn and gets its events back. A mast on its roof
+ * reaches Muse Spark's tower behind, which answers the chat and the agency desk alike. Norba's building stands
  * to its right and relays to the airlines' stands, and it sends the airline's schedule changes back as webhooks. The
  * agency desk and other AI assistants (over MCP) come in from the front. Each step's number sits on its wire and the
  * legend beside the drawing tells them in order; red marks a chat turn's path, ink the rest.
@@ -36,7 +36,6 @@ const track = (a: [number, number], b: [number, number], half = 0.7): V3[] =>
 type Block = { u0: number; u1: number; v0: number; v1: number; z: number };
 
 const META: Block = { u0: -10, u1: -3, v0: -18, v1: -12, z: 13 };
-const OPEN: Block = { u0: 2, u1: 7, v0: -17, v1: -12.5, z: 9 };
 const LAPTOP: Block = { u0: -26, u1: -18, v0: -2.6, v1: 2.6, z: 1.4 };
 const AGENT: Block = { u0: -9, u1: 0, v0: -3.5, v1: 3.5, z: 6 };
 const NORBA: Block = { u0: 9, u1: 15, v0: -3, v1: 3, z: 5 };
@@ -45,7 +44,6 @@ const MCP: Block = { u0: -3.5, u1: 6, v0: 8.5, v1: 11.5, z: 1 };
 
 /** The masts on the agent's roof, and the airlines' branches out of Norba. */
 const MAST_META = { u: -6, v: -1.2, z: 8.6 };
-const MAST_OPEN = { u: -2, v: -1.2, z: 8 };
 const SPLIT = [15, 18];
 const END_U = 23.5;
 const LINES = [
@@ -66,7 +64,7 @@ const DRAWING = (() => {
   /* Ground: shadows, then the tracks the wires run on. */
   scene.pass = 0;
   scene.framing = false;
-  for (const b of [META, OPEN, AGENT, NORBA, AGENCY]) scene.shadow([...corners(b, 0), ...corners(b, b.z)]);
+  for (const b of [META, AGENT, NORBA, AGENCY]) scene.shadow([...corners(b, 0), ...corners(b, b.z)]);
   scene.shadow([...corners(LAPTOP, 0), ...corners(LAPTOP, LAPTOP.z), P(-24, -1.6, 4.6), P(-20, -1.6, 4.6)]);
   scene.line([...ground([[-29, -21], [30, -21], [30, 15], [-29, 15]]), P(-29, -21, 0)], "dash");
   scene.framing = true;
@@ -80,13 +78,11 @@ const DRAWING = (() => {
   scene.face(ground([[AGENCY.u1, 11.3], [AGENCY_U + 0.7, 11.3], [AGENCY_U + 0.7, AGENT.v1], [AGENCY_U - 0.7, AGENT.v1], [AGENCY_U - 0.7, 12.7], [AGENCY.u1, 12.7]]), "well");
   scene.face(track([MCP_U, AGENT.v1], [MCP_U, MCP.v0]), "well");
 
-  /* The Meta towers at the back: Muse Spark, and Muse Spark Open beside it. */
+  /* Muse Spark's tower at the back. */
   scene.pass = 1;
   lbox(scene, META.u0, META.v0, 0, META.u1, META.v1, META.z);
   scene.lines(range(1, META.z - 4, 7).map((z) => [P(META.u0 + 0.6, META.v1, z), P(META.u1 - 0.6, META.v1, z)]), "hair");
   scene.lines(range(META.v0 + 0.8, META.v1 - 0.8, 5).map((v) => [P(META.u1, v, 0.8), P(META.u1, v, META.z - 0.8)]), "hair");
-  lbox(scene, OPEN.u0, OPEN.v0, 0, OPEN.u1, OPEN.v1, OPEN.z);
-  scene.lines(range(1, OPEN.z - 3, 5).map((z) => [P(OPEN.u0 + 0.6, OPEN.v1, z), P(OPEN.u1 - 0.6, OPEN.v1, z)]), "hair");
 
   /* The traveller's laptop on its plinth, a conversation on the screen. */
   scene.pass = 2;
@@ -106,7 +102,7 @@ const DRAWING = (() => {
   scene.lines(range(AGENT.u0 + 0.8, AGENT.u1 - 0.8, 9).map((u) => [P(u, AGENT.v1, 0.6), P(u, AGENT.v1, AGENT.z - 2.2)]), "hair");
   scene.line([P(AGENT.u0 + 0.5, AGENT.v1, AGENT.z - 1.8), P(AGENT.u1 - 0.5, AGENT.v1, AGENT.z - 1.8)], "fine");
   scene.lines(range(AGENT.v0 + 0.8, AGENT.v1 - 0.8, 6).map((v) => [P(AGENT.u1, v, 0.6), P(AGENT.u1, v, AGENT.z - 0.6)]), "hair");
-  for (const m of [MAST_META, MAST_OPEN]) {
+  for (const m of [MAST_META]) {
     lbox(scene, m.u - 0.18, m.v - 0.18, AGENT.z, m.u + 0.18, m.v + 0.18, m.z);
     scene.face(range(0, 2 * Math.PI, 16).map((t) => P(m.u + 0.55 * Math.cos(t), m.v + 0.55 * Math.sin(t), m.z)));
   }
@@ -187,10 +183,9 @@ export function ArchitectureDrawing() {
         ))}
       </g>
 
-      {/* The other wires in ink: events back, the agency desk's model, webhooks, the agency and the assistants. */}
+      {/* The other wires in ink: events back, webhooks, the agency and the assistants. */}
       <g className="fx-fade" style={{ animationDelay: "1200ms" }}>
         <polyline points={pts([g(AGENT.u0, EVENTS_V), g(LAPTOP.u1, EVENTS_V)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
-        <polyline points={pts([P(MAST_OPEN.u, MAST_OPEN.v, MAST_OPEN.z), P(4.5, OPEN.v1, 6.5)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
         <polyline points={pts([g(NORBA.u0, WEBHOOK_V), g(AGENT.u1, WEBHOOK_V)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
         <polyline points={pts([g(AGENCY.u1, 12), g(AGENCY_U, 12), g(AGENCY_U, AGENT.v1)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
         <polyline points={pts([g(MCP_U, MCP.v0), g(MCP_U, AGENT.v1)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
@@ -199,11 +194,10 @@ export function ArchitectureDrawing() {
       {/* Every piece named on an upright tag; the red square marks what was built during the hackathon. */}
       <Tag at={at(P(-22, -1.5, 4.6))} off={[-15, -70]} title="You" sub="Chat · voice · files" made />
       <Tag at={at(P(-4.5, 0, AGENT.z))} off={[-62, -150]} title="Agent" sub="This repo · Next.js" made />
-      <Tag at={at(P(-6.5, -15, META.z))} off={[-10, -34]} title="Muse Spark" sub="Meta Model API" />
-      <Tag at={at(P(4.5, -14.7, OPEN.z))} off={[40, -40]} title="Muse Spark Open" sub="Open weights · Baseten" />
+      <Tag at={at(P(-6.5, -15, META.z))} off={[-10, -34]} title="Muse Spark" sub="Meta Model API · chat and desk" />
       <Tag at={at(P(12, 0, NORBA.z))} off={[100, -74]} title="Norba API" sub="norba.io · our startup" />
       <Tag at={at(P(END_U + 2.2, LINES[0].v, 6.6))} off={[8, -112]} title="Airlines" sub="Live, over NDC" />
-      <Tag at={at(P((AGENCY.u0 + AGENCY.u1) / 2, AGENCY.v1, 0))} off={[-20, 46]} title="Agency desk" sub="/agency" made />
+      <Tag at={at(P((AGENCY.u0 + AGENCY.u1) / 2, AGENCY.v1, 0))} off={[-20, 46]} title="Agency desk" sub="/agency · same Muse Spark" made />
       <Tag at={at(P(1.25, MCP.v1, 0))} off={[30, 46]} title="Any AI assistant" sub="MCP · /api/mcp" made />
 
       {/* Each step's number on its wire, appearing in order. */}

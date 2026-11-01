@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="src/app/icon.svg" width="88" height="88" alt="Norba">
-</p>
-
-<h1 align="center">Norba Travels Agent</h1>
+<h1><img src="src/app/icon.svg" width="30" height="30" align="center" alt="Norba"> Norba Travels Agent</h1>
 
 > [!IMPORTANT]
 > **Built during the hackathon.** Everything in this repository was written during the Meta Global AI Developer
@@ -12,10 +8,10 @@
 >
 > | Already existed | How it is used |
 > | --- | --- |
-> | The Norba API | Norba is our own startup; its existing API (`api.norba.io`) is called over HTTPS |
+> | [The Norba API](https://norba.io) | Norba is our own startup; its existing API (`api.norba.io`) is called over HTTPS |
 
 A travel agent that works for you before, during and after the trip, built on **Meta's models** and booking real
-flights through the **Norba API**, which talks to the airlines directly (NDC, New Distribution Capability).
+flights through the **[Norba API](https://norba.io)**, which talks to the airlines directly (NDC, New Distribution Capability).
 
 - **From any message to a trip.** Type it, say it, or drop an invitation, a screenshot of a chat or a PDF: Muse Spark
   reads it and the agent searches, prices, seats, bags, travellers, card — to the booking reference.

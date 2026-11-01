@@ -170,7 +170,12 @@ export default function Docs() {
               <Table
                 head={["Already existed", "How it is used"]}
                 rows={[
-                  ["The Norba API", "Norba is our own startup; its existing API is called over HTTPS"],
+                  [
+                    <a key="n" href="https://norba.io" target="_blank" rel="noreferrer" className="cursor-pointer underline decoration-hr-line-strong underline-offset-4 transition-colors hover:decoration-hr-rust">
+                      The Norba API
+                    </a>,
+                    "Norba is our own startup; its existing API is called over HTTPS",
+                  ],
                 ]}
               />
             </div>
@@ -182,7 +187,7 @@ export default function Docs() {
             </p>
             <h1 className="text-[34px] leading-tight tracking-[-0.03em] text-hr-ink-strong md:text-[42px]">Norba Travels Agent</h1>
             <P>
-              A travel agent built on Meta&apos;s models that books real flights through the Norba API. This page covers everything it uses and exposes: the Meta model calls, the
+              A travel agent built on Meta&apos;s models that books real flights through the <a href="https://norba.io" target="_blank" rel="noreferrer" className="cursor-pointer text-hr-ink-strong underline decoration-hr-line-strong underline-offset-4 transition-colors hover:decoration-hr-rust">Norba API</a>. This page covers everything it uses and exposes: the Meta model calls, the
               Norba endpoints, its own routes, the tools the model can call, the MCP server for other assistants, the safety rules and every setting.
             </P>
           </div>

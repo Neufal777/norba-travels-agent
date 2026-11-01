@@ -1,7 +1,8 @@
 "use client";
 
 import { STEPS } from "./architecture-steps";
-import { layout, Paths, range, Scene, Sheet, type Kind, type P2, type V3 } from "./iso";
+import { layout, Paths, range, Scene, Sheet, type Kind, type V3 } from "./iso";
+import { Badge, Legend, Tag } from "./kit";
 
 /**
  * The docs page's architecture, as a small campus on drawing paper, read as numbered steps. The agent's building
@@ -12,15 +13,13 @@ import { layout, Paths, range, Scene, Sheet, type Kind, type P2, type V3 } from 
  * legend beside the drawing tells them in order; red marks a chat turn's path, ink the rest.
  */
 
-const W = 760;
-const H = 470;
+const W = 960;
+const H = 540;
 
 /** `u` runs along the sheet to the right, `v` towards the viewer, in metres; larger `u` or `v` stands nearer. */
 const TURN = (18 * Math.PI) / 180;
 const [C, S] = [Math.cos(TURN), Math.sin(TURN)];
 const P = (u: number, v: number, z: number): V3 => [u * C + v * S, v * C - u * S, z];
-const ALONG: V3 = [C, -S, 0];
-const UP_DOWN: V3 = [0, 0, -1];
 
 function lbox(scene: Scene, u0: number, v0: number, z0: number, u1: number, v1: number, z1: number, kind?: Kind) {
   scene.orientedBox(P(u0, v0, z0), [(u1 - u0) * C, -(u1 - u0) * S, 0], [(v1 - v0) * S, (v1 - v0) * C, 0], z1 - z0, kind);
@@ -144,7 +143,7 @@ const DRAWING = (() => {
   }
   lbox(scene, 3.8, 9.3, MCP.z, 5.3, 10.7, MCP.z + 2.8);
 
-  const L = layout(scene, W, H, { l: 20, r: 316, t: 60, b: 20 });
+  const L = layout(scene, W, H, { l: 30, r: 330, t: 96, b: 74 });
   return { L };
 })();
 
@@ -163,33 +162,16 @@ const MARKS: Record<(typeof STEPS)[number]["n"], V3> = {
 };
 
 /** The legend's column on the sheet. */
-const LX = W - 282;
+const LX = W - 304;
 const LY = 56;
-const ROW = 34;
-
-/** A step's number in a disc: red on a chat turn's path, ink for the other ways in. */
-function Badge({ at: [x, y], n, delay }: { at: P2; n: string; delay: number }) {
-  const red = /\d/.test(n);
-  return (
-    <g className="fx-fade font-mono" style={{ animationDelay: `${delay}ms` }}>
-      <circle cx={x} cy={y} r={11.5} fill="var(--hr-panel)" />
-      <circle cx={x} cy={y} r={9} fill={red ? "var(--hr-rust)" : "var(--hr-ink-strong)"} />
-      <text x={x} y={y + 0.5} fontSize={10.5} fontWeight={600} textAnchor="middle" dominantBaseline="central" fill="var(--hr-panel)">
-        {n}
-      </text>
-    </g>
-  );
-}
 
 export function ArchitectureDrawing() {
   const { L } = DRAWING;
-  const { at, plane, K } = L;
-  const pts = (list: V3[]) => list.map((p) => at(p).join(",")).join(" ");
-  const wire = { fill: "none", strokeWidth: 1.3, strokeDasharray: "5 3", strokeLinejoin: "round" as const, className: "fx-wire" };
-  const step = (i: number) => 1300 + i * 220;
-  const main = STEPS.filter((s) => /\d/.test(s.n));
-  const other = STEPS.filter((s) => !/\d/.test(s.n));
-  const rowY = (i: number) => LY + 46 + i * ROW + (i >= main.length ? 40 : 0);
+  const { at } = L;
+  const pts = (list: V3[]) => list.map((p) => at(p).map((n) => n.toFixed(1)).join(",")).join(" ");
+  const wire = { fill: "none", strokeWidth: 1.4, strokeDasharray: "5 3", strokeLinejoin: "round" as const, className: "fx-wire" };
+  const step = (i: number) => 1500 + i * 220;
+  const ink = (n: string) => !/\d/.test(n);
 
   return (
     <Sheet code="A-01" title="How a trip is booked" W={W} H={H}>
@@ -207,76 +189,38 @@ export function ArchitectureDrawing() {
 
       {/* The other wires in ink: events back, the agency desk's model, webhooks, the agency and the assistants. */}
       <g className="fx-fade" style={{ animationDelay: "1200ms" }}>
-        <polyline points={pts([g(AGENT.u0, EVENTS_V), g(LAPTOP.u1, EVENTS_V)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={0.9} />
-        <polyline points={pts([P(MAST_OPEN.u, MAST_OPEN.v, MAST_OPEN.z), P(4.5, OPEN.v1, 6.5)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={0.9} />
-        <polyline points={pts([g(NORBA.u0, WEBHOOK_V), g(AGENT.u1, WEBHOOK_V)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={0.9} />
-        <polyline points={pts([g(AGENCY.u1, 12), g(AGENCY_U, 12), g(AGENCY_U, AGENT.v1)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={0.9} />
-        <polyline points={pts([g(MCP_U, MCP.v0), g(MCP_U, AGENT.v1)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={0.9} />
+        <polyline points={pts([g(AGENT.u0, EVENTS_V), g(LAPTOP.u1, EVENTS_V)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
+        <polyline points={pts([P(MAST_OPEN.u, MAST_OPEN.v, MAST_OPEN.z), P(4.5, OPEN.v1, 6.5)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
+        <polyline points={pts([g(NORBA.u0, WEBHOOK_V), g(AGENT.u1, WEBHOOK_V)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
+        <polyline points={pts([g(AGENCY.u1, 12), g(AGENCY_U, 12), g(AGENCY_U, AGENT.v1)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
+        <polyline points={pts([g(MCP_U, MCP.v0), g(MCP_U, AGENT.v1)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={1} />
       </g>
 
-      {/* Names on the fronts, codes on the plinths. */}
-      <g className="fx-fade font-mono" style={{ animationDelay: "900ms" }}>
-        <text transform={plane(P(META.u0 + 0.7, META.v1, META.z - 1.4), ALONG, UP_DOWN)} fontSize={1.5 * K} letterSpacing="0.08em" fill="var(--hr-ink-strong)">
-          META
-        </text>
-        <text transform={plane(P(META.u0 + 0.7, META.v1, META.z - 2.7), ALONG, UP_DOWN)} fontSize={0.62 * K} letterSpacing="0.06em" fill="var(--hr-ink-strong)">
-          MUSE SPARK
-        </text>
-        <text transform={plane(P(OPEN.u0 + 0.6, OPEN.v1, OPEN.z - 1.3), ALONG, UP_DOWN)} fontSize={0.62 * K} letterSpacing="0.06em" fill="var(--hr-ink-strong)">
-          SPARK OPEN
-        </text>
-        <text transform={plane(P(AGENT.u0 + 0.6, AGENT.v1, AGENT.z - 0.55), ALONG, UP_DOWN)} fontSize={1.05 * K} letterSpacing="0.08em" fill="var(--hr-ink-strong)">
-          AGENT
-        </text>
-        <text transform={plane(P(NORBA.u0 + 0.6, NORBA.v1, NORBA.z - 1.1), ALONG, UP_DOWN)} fontSize={1.05 * K} letterSpacing="0.08em" fill="var(--hr-ink-strong)">
-          NORBA
-        </text>
-        <text transform={plane(P(LAPTOP.u0 + 0.6, LAPTOP.v1, 1.05), ALONG, UP_DOWN)} fontSize={0.75 * K} letterSpacing="0.06em" fill="var(--hr-ink-strong)">
-          YOU
-        </text>
-        <text transform={plane(P(AGENCY.u0 + 0.6, AGENCY.v1, AGENCY.z - 1.1), ALONG, UP_DOWN)} fontSize={0.9 * K} letterSpacing="0.08em" fill="var(--hr-ink-strong)">
-          AGENCY
-        </text>
-        <text transform={plane(P(MCP.u0 + 0.5, MCP.v1, MCP.z - 0.22), ALONG, UP_DOWN)} fontSize={0.65 * K} letterSpacing="0.08em" fill="var(--hr-ink-strong)">
-          MCP
-        </text>
-        {LINES.map(({ code, v }) => (
-          <text key={code} transform={plane(P(END_U + 1.2, v + 1.6, 0.9), ALONG, UP_DOWN)} fontSize={0.8 * K} letterSpacing="0.08em" fill="var(--hr-ink-strong)">
-            {code}
-          </text>
-        ))}
-      </g>
+      {/* Every piece named on an upright tag; the red square marks what was built during the hackathon. */}
+      <Tag at={at(P(-22, -1.5, 4.6))} off={[-15, -70]} title="You" sub="Chat · voice · files" made />
+      <Tag at={at(P(-4.5, 0, AGENT.z))} off={[-62, -150]} title="Agent" sub="This repo · Next.js" made />
+      <Tag at={at(P(-6.5, -15, META.z))} off={[-10, -34]} title="Muse Spark" sub="Meta Model API" />
+      <Tag at={at(P(4.5, -14.7, OPEN.z))} off={[40, -40]} title="Muse Spark Open" sub="Open weights · Baseten" />
+      <Tag at={at(P(12, 0, NORBA.z))} off={[100, -74]} title="Norba API" sub="norba.io · our startup" />
+      <Tag at={at(P(END_U + 2.2, LINES[0].v, 6.6))} off={[8, -112]} title="Airlines" sub="Live, over NDC" />
+      <Tag at={at(P((AGENCY.u0 + AGENCY.u1) / 2, AGENCY.v1, 0))} off={[-20, 46]} title="Agency desk" sub="/agency" made />
+      <Tag at={at(P(1.25, MCP.v1, 0))} off={[30, 46]} title="Any AI assistant" sub="MCP · /api/mcp" made />
 
       {/* Each step's number on its wire, appearing in order. */}
       {STEPS.map((s, i) => (
-        <Badge key={s.n} at={at(MARKS[s.n])} n={s.n} delay={step(i)} />
+        <Badge key={s.n} at={at(MARKS[s.n])} n={s.n} ink={ink(s.n)} delay={step(i)} />
       ))}
 
-      {/* The legend: the steps in order, then the other ways in. */}
-      <g className="font-mono">
-        <rect x={LX - 16} y={LY} width={W - LX - 4} height={rowY(STEPS.length - 1) + 30 - LY} fill="var(--hr-panel)" stroke="var(--hr-line-strong)" />
-        <text x={LX} y={LY + 22} fontSize={10} letterSpacing="0.08em" fill="var(--hr-ink-3)">
-          A BOOKING, STEP BY STEP
-        </text>
-        <line x1={LX - 16} x2={W - 20} y1={rowY(main.length) - 46} y2={rowY(main.length) - 46} stroke="var(--hr-line-strong)" />
-        <text x={LX} y={rowY(main.length) - 24} fontSize={10} letterSpacing="0.08em" fill="var(--hr-ink-3)">
-          OTHER WAYS IN
-        </text>
-        {[...main, ...other].map((s, i) => (
-          <g key={s.n} className="fx-fade" style={{ animationDelay: `${step(i)}ms` }}>
-            <circle cx={LX + 9} cy={rowY(i) + 4} r={9} fill={/\d/.test(s.n) ? "var(--hr-rust)" : "var(--hr-ink-strong)"} />
-            <text x={LX + 9} y={rowY(i) + 4.5} fontSize={10.5} fontWeight={600} textAnchor="middle" dominantBaseline="central" fill="var(--hr-panel)">
-              {s.n}
-            </text>
-            <text x={LX + 28} y={rowY(i)} fontSize={10.5} letterSpacing="0.04em" fill="var(--hr-ink-strong)" className="uppercase">
-              {s.title}
-            </text>
-            <text x={LX + 28} y={rowY(i) + 15} fontSize={9.5} fill="var(--hr-ink-3)">
-              {s.sub}
-            </text>
-          </g>
-        ))}
-      </g>
+      <Legend
+        x={LX}
+        y={LY}
+        w={W - LX - 24}
+        heading="A booking, step by step"
+        rows={STEPS.map((s) => ({ ...s, ink: ink(s.n) }))}
+        split={STEPS.findIndex((s) => ink(s.n))}
+        splitHeading="Other ways in"
+        delay={step}
+      />
     </Sheet>
   );
 }

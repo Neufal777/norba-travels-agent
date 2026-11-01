@@ -206,7 +206,7 @@ export default function Docs() {
           </Section>
 
           <Section id="architecture" title="Architecture">
-            <figure className="na-paper relative aspect-[760/470] overflow-hidden border border-hr-line-strong/70">
+            <figure className="na-paper relative aspect-[960/540] overflow-hidden border border-hr-line-strong/70">
               <ArchitectureDrawing />
             </figure>
             <ol className="grid gap-1.5 text-[13px] leading-[1.55] text-hr-ink-2 sm:hidden">

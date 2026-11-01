@@ -1,4 +1,4 @@
-<h1><img src="src/app/icon.svg" width="30" height="30" align="center" alt="Norba"> Norba Travels Agent</h1>
+<h1><img src="src/app/icon.svg" width="44" height="44" align="center" alt="Norba"> Norba Travels Agent</h1>
 
 > [!IMPORTANT]
 > **Built during the hackathon.** Everything in this repository was written during the Meta Global AI Developer
@@ -28,6 +28,34 @@ Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026), Start
 World*. [Norba](https://norba.io) is our own startup: a flight-distribution API that connects travel businesses to the
 airlines through NDC. This agent is what we built on top of it during the hackathon.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/trip-dark.png">
+  <img alt="From a sentence to a seat: the request at the terminal, the airline search at the tower, seats and bags at the stand, the booking in the air and the e-tickets at the destination." src="docs/trip-light.png">
+</picture>
+
+## In pictures
+
+### Any file becomes a trip
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/vision-dark.png">
+  <img alt="A wedding invitation with the date, the place and the names boxed in red by Muse Spark; the reading becomes the trip card the agent searches the airlines with." src="docs/vision-light.png">
+</picture>
+
+### Group trips from several cities
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/group-dark.png">
+  <img alt="Ana in Madrid, Léa in Paris and Tom in London each have their own agent; a coordinator on Muse Spark at high reasoning effort picks the flights that land them together in New York, and each pays their own seat." src="docs/group-light.png">
+</picture>
+
+### A guardian after booking
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/guardian-dark.png">
+  <img alt="An airline moves a flight and Norba's webhook reaches the agent, or the traveller photographs a departure board saying CANCELLED; the agent offers better flights and one tap on Switch changes the booking." src="docs/guardian-light.png">
+</picture>
+
 ## Meta's models in it
 
 | Model | Where | What it does |
@@ -43,7 +71,7 @@ airlines through NDC. This agent is what we built on top of it during the hackat
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.png">
-  <img alt="Architecture: the traveller's laptop sends a chat turn to the agent; the agent's roof masts reach Meta's Muse Spark and Muse Spark Open towers; the agent calls Norba, which relays to the airlines and sends schedule changes back as a webhook; the agency desk and any AI assistant over MCP connect to the agent." src="docs/architecture-light.png">
+  <img alt="How a trip is booked, step by step: 1 you ask, 2 Muse Spark plans, 3 the agent calls Norba, 4 Norba asks the airlines, 5 offers stream back, 6 you pay and it books, 7 the airline moves a flight; A the agency desk on Muse Spark Open, B any AI assistant over MCP." src="docs/architecture-light.png">
 </picture>
 
 - **A chat turn** is `POST /api/chat`, answered as NDJSON events; `GET /api/updates` brings later changes (a paid group
@@ -172,6 +200,7 @@ src/
   app/api/…            agency desk, checkout payment, transcription, updates poll, Norba webhook, mock simulations
   app/agency           the agency desk
   app/board            a departure board to film
+  app/art              the illustrations in their hackathon frames; the README images are taken from here
   app/pay/[token]      checkout links
   server/agent         the loop (run.ts), tools (shopping, booking, servicing, group), vision, guardian, prompt, offline planner
   server/llm           Meta Model API client (Chat Completions, streaming, tools, structured output) and voice

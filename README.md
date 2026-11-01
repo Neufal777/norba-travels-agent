@@ -189,3 +189,7 @@ Norba's brand: Cloud, Mist, Stone, Slate and Midnight with Vermilion for action,
 corners, hairline borders, mono uppercase eyebrows, 6 px square markers and the rising-fill buttons with the sliding
 boxed arrow. Motion (messages rising in, the scan line while Muse Spark reads a file, boxes drawn on what it found, a
 square crossing the flight line while airlines answer) honours `prefers-reduced-motion`. Light and dark themes.
+
+## License
+
+MIT — see [LICENSE](LICENSE). The Norba API this agent calls is a separate product and is not covered by it.

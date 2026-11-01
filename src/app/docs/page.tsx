@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AppFooter } from "@/components/app-footer";
 import { NorbaWordmark } from "@/components/brand";
 import { NavLinks } from "@/components/nav-link";
+import { DocsToc } from "./docs-toc";
 import { Sq } from "@/components/status";
 import { brain } from "@/server/agent/run";
 import { config, norbaEnvironment, openModelMode } from "@/server/config";
@@ -162,18 +163,7 @@ export default function Docs() {
       </header>
 
       <div className="mx-auto grid w-full max-w-[1120px] flex-1 gap-10 px-5 py-10 md:px-10 lg:grid-cols-[200px_minmax(0,1fr)]">
-        <nav aria-label="On this page" className="hidden lg:block">
-          <ol className="sticky top-20 space-y-1.5">
-            {SECTIONS.map(([id, title], i) => (
-              <li key={id}>
-                <a href={`#${id}`} className="flex cursor-pointer gap-2 text-[12.5px] text-hr-ink-3 no-underline transition-colors hover:text-hr-ink-strong">
-                  <span className="w-5 font-mono text-[10px] tabular-nums leading-[1.9] text-hr-ink-4">{String(i + 1).padStart(2, "0")}</span>
-                  {title}
-                </a>
-              </li>
-            ))}
-          </ol>
-        </nav>
+        <DocsToc sections={SECTIONS} />
 
         <main className="min-w-0 space-y-10">
           <section id="provenance" aria-labelledby="provenance-title" className="scroll-mt-20 border-2 border-hr-rust bg-[color-mix(in_srgb,var(--hr-rust)_6%,transparent)]">

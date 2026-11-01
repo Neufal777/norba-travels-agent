@@ -4,6 +4,7 @@ import { AppFooter } from "@/components/app-footer";
 import { NorbaWordmark } from "@/components/brand";
 import { NavLinks } from "@/components/nav-link";
 import { ArchitectureDrawing } from "@/components/drawing/architecture";
+import { STEPS } from "@/components/drawing/architecture-steps";
 import { DocsToc } from "./docs-toc";
 import { Sq } from "@/components/status";
 import { brain } from "@/server/agent/run";
@@ -82,16 +83,6 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
     </div>
   );
 }
-
-/** What the drawing's callouts say, for phones, where the callouts are hidden. */
-const ARCHITECTURE_WIRES = [
-  ["A chat turn", "POST /api/chat, answered as NDJSON events"],
-  ["Agency desk", "/agency, on Muse Spark Open (Baseten)"],
-  ["Airline changes", "Norba's order.schedule_changed webhook, back to the conversation"],
-  ["Any AI assistant", "MCP at /api/mcp: search, price, checkout links"],
-  ["Muse Spark", "tools, vision and structured output on the Meta Model API"],
-  ["The airlines", "through the Norba API (NDC)"],
-] as const;
 
 const CHAT_CALL = `POST https://api.meta.ai/v1/chat/completions
 Authorization: Bearer $MODEL_API_KEY
@@ -210,16 +201,19 @@ export default function Docs() {
           </Section>
 
           <Section id="architecture" title="Architecture">
-            <figure className="na-paper relative aspect-[490/370] overflow-hidden border border-hr-line-strong/70 sm:aspect-[760/430]">
+            <figure className="na-paper relative aspect-[760/470] overflow-hidden border border-hr-line-strong/70">
               <ArchitectureDrawing />
             </figure>
-            <ul className="grid gap-1.5 text-[13px] leading-[1.55] text-hr-ink-2 md:hidden">
-              {ARCHITECTURE_WIRES.map(([who, what]) => (
-                <li key={who}>
-                  <span className="text-hr-ink-strong">{who}</span> — {what}
+            <ol className="grid gap-1.5 text-[13px] leading-[1.55] text-hr-ink-2 sm:hidden">
+              {STEPS.map((s) => (
+                <li key={s.n} className="flex gap-2.5">
+                  <span className={`grid size-5 shrink-0 place-items-center rounded-full font-mono text-[10.5px] text-hr-panel ${/\d/.test(s.n) ? "bg-hr-rust" : "bg-hr-ink-strong"}`}>{s.n}</span>
+                  <span>
+                    <span className="text-hr-ink-strong">{s.title}</span> — {s.sub}
+                  </span>
                 </li>
               ))}
-            </ul>
+            </ol>
             <P>
               A Next.js app (App Router) with its server in <C>src/server</C>. Every chat turn is one <C>POST /api/chat</C> answered as a stream of NDJSON events. The agent loop
               (<C>src/server/agent/run.ts</C>) asks Muse Spark, runs the tools it calls against Norba, gives it the results and repeats, up to eight rounds per message.

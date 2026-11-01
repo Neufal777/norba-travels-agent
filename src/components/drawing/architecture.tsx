@@ -1,17 +1,19 @@
 "use client";
 
-import { Callout, layout, Paths, range, Scene, Sheet, type Kind, type V3 } from "./iso";
+import { STEPS } from "./architecture-steps";
+import { layout, Paths, range, Scene, Sheet, type Kind, type P2, type V3 } from "./iso";
 
 /**
- * The docs page's architecture, as a small campus on drawing paper. The agent's building stands in the middle. The
- * traveller's laptop sends it a chat turn and gets its events back. Two masts on its roof reach the Meta towers
- * behind: Muse Spark for the chat, Muse Spark Open for the agency desk. Norba's building stands to its right and
- * relays to the airlines' stands, and it sends the airline's schedule changes back as webhooks. The agency desk and
- * other AI assistants (over MCP) come in from the front. Red marks a chat turn's path; the other wires are in ink.
+ * The docs page's architecture, as a small campus on drawing paper, read as numbered steps. The agent's building
+ * stands in the middle. The traveller's laptop sends it a chat turn and gets its events back. Two masts on its roof
+ * reach the Meta towers behind: Muse Spark for the chat, Muse Spark Open for the agency desk. Norba's building stands
+ * to its right and relays to the airlines' stands, and it sends the airline's schedule changes back as webhooks. The
+ * agency desk and other AI assistants (over MCP) come in from the front. Each step's number sits on its wire and the
+ * legend beside the drawing tells them in order; red marks a chat turn's path, ink the rest.
  */
 
 const W = 760;
-const H = 430;
+const H = 470;
 
 /** `u` runs along the sheet to the right, `v` towards the viewer, in metres; larger `u` or `v` stands nearer. */
 const TURN = (18 * Math.PI) / 180;
@@ -142,20 +144,55 @@ const DRAWING = (() => {
   }
   lbox(scene, 3.8, 9.3, MCP.z, 5.3, 10.7, MCP.z + 2.8);
 
-  const L = layout(scene, W, H, { l: 120, r: 150, t: 70, b: 86 });
-  // A phone hides the callouts, so its crop takes in the whole campus and nothing else.
-  return { L, phone: "120 40 490 370" };
+  const L = layout(scene, W, H, { l: 20, r: 316, t: 60, b: 20 });
+  return { L };
 })();
 
+/** Where each step's number stands on the drawing. */
+const g = (u: number, v: number) => P(u, v, 0.05);
+const MARKS: Record<(typeof STEPS)[number]["n"], V3> = {
+  "1": g(-16, TURN_V),
+  "2": P((MAST_META.u - 6.5) / 2, (MAST_META.v + META.v1) / 2, (MAST_META.z + 10.5) / 2),
+  "3": g(2.6, TURN_V),
+  "4": g(SPLIT[1] + 2.4, LINES[0].v),
+  "5": g(-12, EVENTS_V),
+  "6": P(-22, -1.5, 5.4),
+  "7": g(6.6, WEBHOOK_V),
+  A: g(-12.5, 12),
+  B: g(MCP_U, 6.2),
+};
+
+/** The legend's column on the sheet. */
+const LX = W - 282;
+const LY = 56;
+const ROW = 34;
+
+/** A step's number in a disc: red on a chat turn's path, ink for the other ways in. */
+function Badge({ at: [x, y], n, delay }: { at: P2; n: string; delay: number }) {
+  const red = /\d/.test(n);
+  return (
+    <g className="fx-fade font-mono" style={{ animationDelay: `${delay}ms` }}>
+      <circle cx={x} cy={y} r={11.5} fill="var(--hr-panel)" />
+      <circle cx={x} cy={y} r={9} fill={red ? "var(--hr-rust)" : "var(--hr-ink-strong)"} />
+      <text x={x} y={y + 0.5} fontSize={10.5} fontWeight={600} textAnchor="middle" dominantBaseline="central" fill="var(--hr-panel)">
+        {n}
+      </text>
+    </g>
+  );
+}
+
 export function ArchitectureDrawing() {
-  const { L, phone } = DRAWING;
+  const { L } = DRAWING;
   const { at, plane, K } = L;
   const pts = (list: V3[]) => list.map((p) => at(p).join(",")).join(" ");
   const wire = { fill: "none", strokeWidth: 1.3, strokeDasharray: "5 3", strokeLinejoin: "round" as const, className: "fx-wire" };
-  const g = (u: number, v: number) => P(u, v, 0.05);
+  const step = (i: number) => 1300 + i * 220;
+  const main = STEPS.filter((s) => /\d/.test(s.n));
+  const other = STEPS.filter((s) => !/\d/.test(s.n));
+  const rowY = (i: number) => LY + 46 + i * ROW + (i >= main.length ? 40 : 0);
 
   return (
-    <Sheet code="A-01" title="One chat turn, end to end" W={W} H={H} phone={phone}>
+    <Sheet code="A-01" title="How a trip is booked" W={W} H={H}>
       <Paths list={L.paths} />
 
       {/* A chat turn in red: laptop to agent, up to Muse Spark, across to Norba and out to every airline. */}
@@ -169,7 +206,7 @@ export function ArchitectureDrawing() {
       </g>
 
       {/* The other wires in ink: events back, the agency desk's model, webhooks, the agency and the assistants. */}
-      <g className="fx-fade" style={{ animationDelay: "1250ms" }}>
+      <g className="fx-fade" style={{ animationDelay: "1200ms" }}>
         <polyline points={pts([g(AGENT.u0, EVENTS_V), g(LAPTOP.u1, EVENTS_V)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={0.9} />
         <polyline points={pts([P(MAST_OPEN.u, MAST_OPEN.v, MAST_OPEN.z), P(4.5, OPEN.v1, 6.5)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={0.9} />
         <polyline points={pts([g(NORBA.u0, WEBHOOK_V), g(AGENT.u1, WEBHOOK_V)])} stroke="var(--hr-ink-strong)" {...wire} strokeWidth={0.9} />
@@ -195,7 +232,7 @@ export function ArchitectureDrawing() {
           NORBA
         </text>
         <text transform={plane(P(LAPTOP.u0 + 0.6, LAPTOP.v1, 1.05), ALONG, UP_DOWN)} fontSize={0.75 * K} letterSpacing="0.06em" fill="var(--hr-ink-strong)">
-          TRAVELLER
+          YOU
         </text>
         <text transform={plane(P(AGENCY.u0 + 0.6, AGENCY.v1, AGENCY.z - 1.1), ALONG, UP_DOWN)} fontSize={0.9 * K} letterSpacing="0.08em" fill="var(--hr-ink-strong)">
           AGENCY
@@ -210,13 +247,36 @@ export function ArchitectureDrawing() {
         ))}
       </g>
 
-      <Callout at={at(g(-13, TURN_V))} off={[-60, -128]} side="left" title="A chat turn" chip={{ code: "POST", text: "/api/chat · NDJSON back" }} red delay={1400} />
-      <Callout at={at(P(META.u0, META.v1, META.z - 3))} off={[-40, -58]} side="left" title="Muse Spark" sub="Tools, vision, structured output" delay={1500} />
-      <Callout at={at(P(OPEN.u1, OPEN.v1, OPEN.z - 2))} off={[60, -26]} side="right" title="Muse Spark Open" sub="Baseten · the agency desk" delay={1550} />
-      <Callout at={at(g(4.5, WEBHOOK_V))} off={[0, 112]} side="right" title="Airline changes" chip={{ code: "order.schedule_changed", text: "webhook" }} delay={1600} />
-      <Callout at={at(P(END_U + 2.2, LINES[0].v, 6))} off={[30, -30]} side="right" title="The airlines" sub="Norba API · NDC" red delay={1650} />
-      <Callout at={at(P(1, MCP.v1, MCP.z))} off={[-30, 44]} side="left" title="Any AI assistant" chip={{ code: "MCP", text: "/api/mcp · checkout links" }} delay={1700} />
-      <Callout at={at(P(AGENCY.u0, AGENCY.v1, AGENCY.z / 2))} off={[-36, -30]} side="left" title="Agency desk" sub="/agency" delay={1750} />
+      {/* Each step's number on its wire, appearing in order. */}
+      {STEPS.map((s, i) => (
+        <Badge key={s.n} at={at(MARKS[s.n])} n={s.n} delay={step(i)} />
+      ))}
+
+      {/* The legend: the steps in order, then the other ways in. */}
+      <g className="font-mono">
+        <rect x={LX - 16} y={LY} width={W - LX - 4} height={rowY(STEPS.length - 1) + 30 - LY} fill="var(--hr-panel)" stroke="var(--hr-line-strong)" />
+        <text x={LX} y={LY + 22} fontSize={10} letterSpacing="0.08em" fill="var(--hr-ink-3)">
+          A BOOKING, STEP BY STEP
+        </text>
+        <line x1={LX - 16} x2={W - 20} y1={rowY(main.length) - 46} y2={rowY(main.length) - 46} stroke="var(--hr-line-strong)" />
+        <text x={LX} y={rowY(main.length) - 24} fontSize={10} letterSpacing="0.08em" fill="var(--hr-ink-3)">
+          OTHER WAYS IN
+        </text>
+        {[...main, ...other].map((s, i) => (
+          <g key={s.n} className="fx-fade" style={{ animationDelay: `${step(i)}ms` }}>
+            <circle cx={LX + 9} cy={rowY(i) + 4} r={9} fill={/\d/.test(s.n) ? "var(--hr-rust)" : "var(--hr-ink-strong)"} />
+            <text x={LX + 9} y={rowY(i) + 4.5} fontSize={10.5} fontWeight={600} textAnchor="middle" dominantBaseline="central" fill="var(--hr-panel)">
+              {s.n}
+            </text>
+            <text x={LX + 28} y={rowY(i)} fontSize={10.5} letterSpacing="0.04em" fill="var(--hr-ink-strong)" className="uppercase">
+              {s.title}
+            </text>
+            <text x={LX + 28} y={rowY(i) + 15} fontSize={9.5} fill="var(--hr-ink-3)">
+              {s.sub}
+            </text>
+          </g>
+        ))}
+      </g>
     </Sheet>
   );
 }

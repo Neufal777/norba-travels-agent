@@ -10,6 +10,12 @@
 > | --- | --- |
 > | [The Norba API](https://norba.io) | Norba is our own startup; its existing API (`api.norba.io`) is called over HTTPS |
 
+**Youtube demo video**: https://youtu.be/aB1zQSqTdUs
+
+**Agent Demo link, TRY IT:** https://agent.norba.io/ 
+
+
+
 A travel agent that works for you before, during and after the trip, built on **Meta's models** and booking real
 flights through the **[Norba API](https://norba.io)**, which talks to the airlines directly (NDC, New Distribution Capability).
 

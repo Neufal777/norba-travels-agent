@@ -1,5 +1,17 @@
 # Norba Travels Agent
 
+> [!IMPORTANT]
+> **Built during the hackathon.** Everything in this repository was written during the Meta Global AI Developer
+> Hackathon's building period, from 30 October 2026 (the commit history starts there): the agent and its prompt,
+> every tool, vision, voice, group trips, the guardian, checkout links, the agency desk, the MCP server and the
+> terminal assistant, the mock, and the interface.
+>
+> | Already existed | How it is used |
+> | --- | --- |
+> | Open-source libraries | Next.js, React, Tailwind CSS, Radix UI, lucide-react, sonner, date-fns (see `package.json`) |
+> | The isometric drawing toolkit | `src/components/drawing/iso.tsx`, ported from the Norba landing page (same author); the airport scene, `hero-airport.tsx`, is new |
+> | The Norba API | Norba is our own startup; its existing API (`api.norba.io`) is called over HTTPS |
+
 A travel agent that works for you before, during and after the trip, built on **Meta's models** and booking real
 flights through the **Norba API**, which talks to the airlines directly (NDC, New Distribution Capability).
 
@@ -17,32 +29,6 @@ flights through the **Norba API**, which talks to the airlines directly (NDC, Ne
 Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026), Startups track, theme *Build for Your
 World*. [Norba](https://norba.io) is our own startup: a flight-distribution API that connects travel businesses to the
 airlines through NDC. This agent is what we built on top of it during the hackathon.
-
-## Built during the hackathon, and what already existed
-
-Everything in this repository was written during the hackathon's building period, starting on 30 October 2026; the
-commit history starts there. That covers the agent and the whole app:
-
-- the agent loop on the Meta Model API (streaming, tool calls, structured output, vision, reasoning effort) and its
-  prompt; the voice dictation on Muse Voice Transcribe;
-- every tool, the twelve-step trip state and the booking flow, with payment kept away from the model;
-- reading attachments, the departure-board check and rebooking, the trip guardian and its webhook;
-- group trips (per-traveller agents and the coordinator), checkout links, the agency desk on Muse Spark Open;
-- the MCP server and the terminal assistant that uses it;
-- the offline planner and the mock Norba client used for development without keys;
-- the chat interface, the trip panel, the cards, the forms, the departure board and the airport drawing.
-
-What already existed and is used, not claimed:
-
-- **The Norba API** (`api.norba.io`): the existing product of Norba, our own startup, which connects to the
-  airlines. This repository only calls it over HTTPS.
-- **The isometric drawing toolkit** in `src/components/drawing/iso.tsx`: ported from the Norba landing page (same
-  author). The airport scene drawn with it, `hero-airport.tsx`, is new.
-- **The visual base**: the palette tokens' structure, the button and tooltip components and the motion utilities in
-  `src/app/globals.css` and `src/components/ui/` are adapted from the author's earlier project Ticket Pilot, recoloured to
-  the Norba brand.
-- **Open-source libraries** listed in `package.json` (Next.js, React, Tailwind CSS, Radix UI, lucide-react, sonner,
-  date-fns).
 
 ## Meta's models in it
 

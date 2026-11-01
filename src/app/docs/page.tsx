@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 const SECTIONS = [
+  ["provenance", "Built during the hackathon"],
   ["overview", "Overview"],
   ["architecture", "Architecture"],
   ["meta", "Meta models"],
@@ -27,7 +28,6 @@ const SECTIONS = [
   ["safety", "Safety and privacy"],
   ["config", "Configuration"],
   ["modes", "Run modes"],
-  ["provenance", "Built during the hackathon"],
 ] as const;
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
@@ -178,6 +178,26 @@ export default function Docs() {
         </nav>
 
         <main className="min-w-0 space-y-10">
+          <section id="provenance" aria-labelledby="provenance-title" className="scroll-mt-20 border-2 border-hr-rust bg-[color-mix(in_srgb,var(--hr-rust)_6%,transparent)]">
+            <h2 id="provenance-title" className="flex items-center gap-2 bg-hr-rust px-4 py-2.5 font-mono text-[12px] uppercase tracking-[0.08em] text-white">
+              <span className="size-1.5 bg-white" /> Built during the hackathon
+            </h2>
+            <div className="space-y-4 p-4">
+              <p className="max-w-[72ch] text-[14px] leading-[1.65] text-hr-ink-strong">
+                Everything in this repository was written during the Meta Global AI Developer Hackathon&apos;s building period, from 30 October 2026: the agent and its prompt, every
+                tool, vision, voice, group trips, the guardian, checkout links, the agency desk, the MCP server and the terminal assistant, the mock, and the interface.
+              </p>
+              <Table
+                head={["Already existed", "How it is used"]}
+                rows={[
+                  ["Open-source libraries", "Next.js, React, Tailwind CSS, Radix UI, lucide-react, sonner, date-fns"],
+                  ["The isometric drawing toolkit", "iso.tsx, ported from the Norba landing page (same author); the airport scene is new"],
+                  ["The Norba API", "Norba is our own startup; its existing API is called over HTTPS"],
+                ]}
+              />
+            </div>
+          </section>
+
           <div className="space-y-3">
             <p className="hr-eyebrow flex items-center gap-2">
               <span className="hr-sq" /> Documentation
@@ -427,21 +447,6 @@ npm run dev        # http://localhost:3200`}</Code>
             />
           </Section>
 
-          <Section id="provenance" title="Built during the hackathon">
-            <P>
-              Everything in this repository was written during the Meta Global AI Developer Hackathon&apos;s building period, from 30 October 2026: the agent and its prompt, every
-              tool, vision, voice, group trips, the guardian, checkout links, the agency desk, the MCP server and the terminal assistant, the mock, and the interface.
-            </P>
-            <Table
-              head={["Already existed", "How it is used"]}
-              rows={[
-                ["Open-source libraries", "Next.js, React, Tailwind CSS, Radix UI, lucide-react, sonner, date-fns"],
-                ["The isometric drawing toolkit", "iso.tsx, ported from the Norba landing page (same author); the airport scene is new"],
-                ["The Norba API", "Norba is our own startup; its existing API is called over HTTPS"],
-                ["The visual base", "Palette structure, buttons, tooltips and motion adapted from the author's earlier project Ticket Pilot, recoloured to Norba"],
-              ]}
-            />
-          </Section>
         </main>
       </div>
       <AppFooter />

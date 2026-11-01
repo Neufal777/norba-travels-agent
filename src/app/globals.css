@@ -4,8 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Visual language: Norba's neutrals and Vermilion accent (norba.io), with Ticket Pilot's square corners, hairline
- * borders, mono uppercase eyebrows and 6px square markers. The `hr-*` names are the tokens' roles, not their hues:
+ * Visual language: Norba's neutrals and Vermilion accent (norba.io), square corners, hairline borders, mono uppercase
+ * eyebrows and 6px square markers. The `hr-*` names are the tokens' roles, not their hues:
  * `rust` is the accent.
  */
 

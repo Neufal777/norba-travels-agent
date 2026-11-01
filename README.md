@@ -41,17 +41,18 @@ airlines through NDC. This agent is what we built on top of it during the hackat
 
 ## How it works
 
-```
-browser ──POST /api/chat──▶ agent loop ──Chat Completions + tools──▶ Meta Model API (Muse Spark)
-   ▲  ▲                        │   └── structured output · vision ──▶ (reading files, group agents, coordinator)
-   │  └─ GET /api/updates ◀─┐  │ tool calls
-   └── NDJSON events ◀──────┤  ▼
-                            │ Norba API: airports · offers/stream · calendar · offers/price · seats · services
-                            │            quote · orders · orders/{id} · reshop · change/confirm
-Norba webhooks ─────────────┘ (order.schedule_changed → the conversation that booked it)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.png">
+  <img alt="Architecture: the traveller's laptop sends a chat turn to the agent; the agent's roof masts reach Meta's Muse Spark and Muse Spark Open towers; the agent calls Norba, which relays to the airlines and sends schedule changes back as a webhook; the agency desk and any AI assistant over MCP connect to the agent." src="docs/architecture-light.png">
+</picture>
 
-other AI assistants ──MCP /api/mcp──▶ search · price · checkout link ──▶ /pay/<token> (the traveller books)
-```
+- **A chat turn** is `POST /api/chat`, answered as NDJSON events; `GET /api/updates` brings later changes (a paid group
+  seat, an airline notice) to the open conversation.
+- **Norba API** calls: airports · offers/stream · calendar · offers/price · seats · services · quote · orders ·
+  orders/{id} · reshop · change/confirm. Schedule changes come back on `order.schedule_changed`, to the conversation
+  that booked the flight.
+- **Any AI assistant** reaches `/api/mcp` for search, pricing and a checkout link, `/pay/<token>`, where the traveller
+  books.
 
 - **The model never sees raw offers.** A search returns 50–150 offers; the model gets a digest (itineraries grouped
   by flights, best-ranked first, each fare with a short ref like `o4`) while the browser receives every offer as it

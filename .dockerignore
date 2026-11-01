@@ -12,3 +12,6 @@ npm-debug.log*
 Dockerfile
 .dockerignore
 render.yaml
+live-demo.md
+submission.md
+docs

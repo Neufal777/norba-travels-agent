@@ -6,6 +6,7 @@ import { ArrowUpRight, Moon, Plus, Sun } from "lucide-react";
 import { HackathonHosts, NorbaWordmark } from "./brand";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { NavLinks } from "./nav-link";
 import { Sq } from "./status";
 import { useStatus } from "./use-status";
 
@@ -63,20 +64,15 @@ export function AppHeader({ onNewChat }: { onNewChat?: () => void }) {
             </>
           )}
 
-          <Link href="/agency" className="hidden cursor-pointer font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 no-underline transition-colors hover:text-hr-ink-strong sm:inline">
-            Agency desk
-          </Link>
-          <Link href="/docs" className="hidden cursor-pointer font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 no-underline transition-colors hover:text-hr-ink-strong sm:inline">
-            Docs
-          </Link>
+          <NavLinks onHome={onNewChat} />
 
           {onNewChat && (
-            <Button variant="outline" size="sm" onClick={onNewChat} className="cursor-pointer">
-              <Plus /> New trip
+            <Button variant="outline" size="sm" onClick={onNewChat} className="cursor-pointer hover:bg-hr-signal" aria-label="New trip">
+              <Plus /> <span className="max-sm:hidden">New trip</span>
             </Button>
           )}
 
-          <Button variant="ghost" size="icon-sm" aria-label="Toggle theme" className="cursor-pointer" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+          <Button variant="outline" size="icon-sm" aria-label="Toggle theme" className="cursor-pointer hover:bg-hr-signal" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
             <Sun className="size-3.5 dark:hidden" />
             <Moon className="hidden size-3.5 dark:block" />
           </Button>

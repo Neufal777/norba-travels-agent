@@ -8,8 +8,6 @@
 >
 > | Already existed | How it is used |
 > | --- | --- |
-> | Open-source libraries | Next.js, React, Tailwind CSS, Radix UI, lucide-react, sonner, date-fns (see `package.json`) |
-> | The isometric drawing toolkit | `src/components/drawing/iso.tsx`, ported from the Norba landing page (same author); the airport scene, `hero-airport.tsx`, is new |
 > | The Norba API | Norba is our own startup; its existing API (`api.norba.io`) is called over HTTPS |
 
 A travel agent that works for you before, during and after the trip, built on **Meta's models** and booking real

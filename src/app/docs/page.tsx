@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { AppFooter } from "@/components/app-footer";
 import { NorbaWordmark } from "@/components/brand";
+import { NavLinks } from "@/components/nav-link";
 import { Sq } from "@/components/status";
 import { brain } from "@/server/agent/run";
 import { config, norbaEnvironment, openModelMode } from "@/server/config";
@@ -157,9 +157,7 @@ export default function Docs() {
               <Sq className={norbaEnvironment() === "mock" ? "bg-hr-concrete" : "bg-hr-success"} /> Norba · {norbaEnvironment()}
             </span>
           </span>
-          <Link href="/" className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 no-underline hover:text-hr-ink-strong">
-            <ArrowLeft className="size-3" /> Agent
-          </Link>
+          <NavLinks className="max-md:ml-auto" />
         </div>
       </header>
 
@@ -190,8 +188,6 @@ export default function Docs() {
               <Table
                 head={["Already existed", "How it is used"]}
                 rows={[
-                  ["Open-source libraries", "Next.js, React, Tailwind CSS, Radix UI, lucide-react, sonner, date-fns"],
-                  ["The isometric drawing toolkit", "iso.tsx, ported from the Norba landing page (same author); the airport scene is new"],
                   ["The Norba API", "Norba is our own startup; its existing API is called over HTTPS"],
                 ]}
               />

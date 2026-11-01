@@ -19,8 +19,8 @@ export function NorbaWordmark({ className, sub }: { className?: string; sub?: st
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
       <NorbaLogo className="size-[22px]" />
-      <span className="font-mono text-[15px] leading-none tracking-[-0.03em] text-hr-ink-strong">
-        Norba{sub && <span className="text-hr-ink-3"> {sub}</span>}
+      <span className="whitespace-nowrap font-mono text-[15px] leading-none tracking-[-0.03em] text-hr-ink-strong">
+        Norba{sub && <span className="text-hr-ink-3 max-[420px]:hidden"> {sub}</span>}
       </span>
     </span>
   );

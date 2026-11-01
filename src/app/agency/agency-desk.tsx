@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ArrowLeft, Copy, FileText, Mail, MessageCircle, ShieldCheck, ShieldX, Upload } from "lucide-react";
+import { Copy, FileText, Mail, MessageCircle, ShieldCheck, ShieldX, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { NorbaWordmark } from "@/components/brand";
 import { AppFooter } from "@/components/app-footer";
+import { NavLinks } from "@/components/nav-link";
 import { Check, Pulse, Sq } from "@/components/status";
 import { ArrowBox, Button } from "@/components/ui/button";
 import { airlineName } from "@/lib/airlines";
@@ -166,13 +167,13 @@ export function AgencyDesk({ model }: { model: Model }) {
     <div className="flex min-h-dvh flex-col">
       <header className="hr-frost border-b border-hr-line">
         <div className="mx-auto flex h-12 w-full max-w-[1120px] items-center gap-4 px-5 md:px-10">
-          <NorbaWordmark sub="Agency desk" />
+          <Link href="/" className="cursor-pointer no-underline">
+            <NorbaWordmark sub="Agency desk" />
+          </Link>
           <span className="ml-auto hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 sm:inline-flex">
             <Sq className={model.mode === "open" ? "bg-hr-success" : "bg-hr-concrete"} /> {model.label}
           </span>
-          <Link href="/" className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.06em] text-hr-ink-3 no-underline hover:text-hr-ink-strong">
-            <ArrowLeft className="size-3" /> Traveller agent
-          </Link>
+          <NavLinks className="max-md:ml-auto" />
         </div>
       </header>
 

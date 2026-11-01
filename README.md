@@ -1,4 +1,8 @@
-# Norba Travels Agent
+<p align="center">
+  <img src="src/app/icon.svg" width="88" height="88" alt="Norba">
+</p>
+
+<h1 align="center">Norba Travels Agent</h1>
 
 > [!IMPORTANT]
 > **Built during the hackathon.** Everything in this repository was written during the Meta Global AI Developer

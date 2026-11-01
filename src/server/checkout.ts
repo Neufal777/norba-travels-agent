@@ -40,12 +40,13 @@ function sweep() {
 
 const token = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
-/** Pax slots for a party: adults first, then children and infants, as an offer's passenger counts say. */
+/** Pax slots for a party: adults first, then children and infants, as an offer's passenger counts say. The ids are the
+ * airline's own (T1, T2…, as in "…|T1:ADT,T2:ADT,T3:CHD"): an order with other passenger ids is refused (airline_refused). */
 export function slotsFor(adults: number, children = 0, infants = 0): PaxSlot[] {
   const out: PaxSlot[] = [];
-  for (let i = 0; i < adults; i++) out.push({ id: `PAX${out.length + 1}`, type: "ADT", label: `Adult ${i + 1}` });
-  for (let i = 0; i < children; i++) out.push({ id: `PAX${out.length + 1}`, type: "CHD", label: `Child ${i + 1}` });
-  for (let i = 0; i < infants; i++) out.push({ id: `PAX${out.length + 1}`, type: "INF", label: `Infant ${i + 1}` });
+  for (let i = 0; i < adults; i++) out.push({ id: `T${out.length + 1}`, type: "ADT", label: `Adult ${i + 1}` });
+  for (let i = 0; i < children; i++) out.push({ id: `T${out.length + 1}`, type: "CHD", label: `Child ${i + 1}` });
+  for (let i = 0; i < infants; i++) out.push({ id: `T${out.length + 1}`, type: "INF", label: `Infant ${i + 1}` });
   return out;
 }
 

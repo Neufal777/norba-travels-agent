@@ -185,7 +185,8 @@ export const liveNorba: NorbaPort = {
     const slice = order.slices?.[q.sliceIndex];
     const body: Record<string, unknown> = { segment_ids: q.segmentIds ?? slice?.segments.map((g) => g.segment_id).filter(Boolean) };
     // Norba takes RFC 3339 timestamps here, not plain dates.
-    const day = q.date ?? slice?.departure_utc.slice(0, 10);
+    // Only a move to another day names one: the same day is the default, and sending it answers 502 on the sandbox.
+    const day = q.date && q.date !== slice?.departure_utc.slice(0, 10) ? q.date : undefined;
     if (day) body[q.sliceIndex === 0 ? "new_departure_date" : "new_return_date"] = `${day}T00:00:00Z`;
     const r = await call<{ offers: Offer[] | null }>(`/v1/orders/${encodeURIComponent(order.order_id)}/reshop?airline=${order.airline}`, {
       method: "POST",

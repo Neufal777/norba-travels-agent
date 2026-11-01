@@ -145,7 +145,9 @@ export function validPassengers(input: Passenger[] | undefined, slots: PaxSlot[]
       if (!DATE.test(d.expiry_date ?? "") || d.expiry_date <= back.slice(0, 10)) throw new FormError(`${slot.label}: the document must be valid after the trip.`);
       document = { type: d.type === "I" ? "I" : "P", number: d.number.trim().toUpperCase(), issuing_country: d.issuing_country, nationality: d.nationality, expiry_date: d.expiry_date };
     }
-    return { id: slot.id, type: slot.type, first_name: first!, last_name: last!, date_of_birth: p.date_of_birth, gender: p.gender, document };
+    // Airlines file names as on the passport's machine-readable line: "García" is refused, "Garcia" is booked.
+    const latin = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return { id: slot.id, type: slot.type, first_name: latin(first!), last_name: latin(last!), date_of_birth: p.date_of_birth, gender: p.gender, document };
   });
 }
 

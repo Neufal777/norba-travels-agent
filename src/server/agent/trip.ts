@@ -104,7 +104,9 @@ const LABEL = { ADT: "Adult", CHD: "Child", INF: "Infant" } as const;
 export function paxSlots(r: SearchRequest): PaxSlot[] {
   const out: PaxSlot[] = [];
   const add = (type: PaxSlot["type"], n = 0) => {
-    for (let i = 1; i <= n; i++) out.push({ id: `PAX${out.length + 1}`, type, label: `${LABEL[type]} ${n > 1 ? i : ""}`.trim() });
+    // The airline numbers an offer's travellers T1, T2… (adults, then children, then infants: "…|T1:ADT,T2:ADT,T3:CHD");
+    // an order whose passenger ids differ is refused with airline_refused.
+    for (let i = 1; i <= n; i++) out.push({ id: `T${out.length + 1}`, type, label: `${LABEL[type]} ${n > 1 ? i : ""}`.trim() });
   };
   add("ADT", r.adults);
   add("CHD", r.children);

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AppFooter } from "@/components/app-footer";
 import { NorbaWordmark } from "@/components/brand";
 import { NavLinks } from "@/components/nav-link";
+import { ArchitectureDrawing } from "@/components/drawing/architecture";
 import { DocsToc } from "./docs-toc";
 import { Sq } from "@/components/status";
 import { brain } from "@/server/agent/run";
@@ -82,15 +83,15 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
   );
 }
 
-const ARCHITECTURE = `browser ──POST /api/chat──▶ agent loop ──Chat Completions + tools──▶ Meta Model API (Muse Spark)
-   ▲  ▲                        │   └── structured output · vision ──▶ reading files, group agents, coordinator
-   │  └─ GET /api/updates ◀─┐  │ tool calls
-   └── NDJSON events ◀──────┤  ▼
-                            │ Norba API ──▶ the airlines (NDC)
-Norba webhooks ─────────────┘ order.schedule_changed → the conversation that booked it
-
-/agency ──▶ Muse Spark Open (Baseten) ──▶ Norba API
-other AI assistants ──MCP /api/mcp──▶ search · price · checkout link ──▶ /pay/<token>, where the traveller books`;
+/** What the drawing's callouts say, for phones, where the callouts are hidden. */
+const ARCHITECTURE_WIRES = [
+  ["A chat turn", "POST /api/chat, answered as NDJSON events"],
+  ["Agency desk", "/agency, on Muse Spark Open (Baseten)"],
+  ["Airline changes", "Norba's order.schedule_changed webhook, back to the conversation"],
+  ["Any AI assistant", "MCP at /api/mcp: search, price, checkout links"],
+  ["Muse Spark", "tools, vision and structured output on the Meta Model API"],
+  ["The airlines", "through the Norba API (NDC)"],
+] as const;
 
 const CHAT_CALL = `POST https://api.meta.ai/v1/chat/completions
 Authorization: Bearer $MODEL_API_KEY
@@ -209,7 +210,16 @@ export default function Docs() {
           </Section>
 
           <Section id="architecture" title="Architecture">
-            <Code>{ARCHITECTURE}</Code>
+            <figure className="na-paper relative aspect-[490/370] overflow-hidden border border-hr-line-strong/70 sm:aspect-[760/430]">
+              <ArchitectureDrawing />
+            </figure>
+            <ul className="grid gap-1.5 text-[13px] leading-[1.55] text-hr-ink-2 md:hidden">
+              {ARCHITECTURE_WIRES.map(([who, what]) => (
+                <li key={who}>
+                  <span className="text-hr-ink-strong">{who}</span> — {what}
+                </li>
+              ))}
+            </ul>
             <P>
               A Next.js app (App Router) with its server in <C>src/server</C>. Every chat turn is one <C>POST /api/chat</C> answered as a stream of NDJSON events. The agent loop
               (<C>src/server/agent/run.ts</C>) asks Muse Spark, runs the tools it calls against Norba, gives it the results and repeats, up to eight rounds per message.
